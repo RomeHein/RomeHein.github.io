@@ -26,18 +26,6 @@ const lightUpNixies = () => {
     }
 }
 
-const turnDigits = (on) => {
-    for (let i =1;i<7;i++) {
-        SVG(`#t${i}`).opacity(on ? 100 : 0);
-        SVG(`#b${i}`).opacity(on ? 100 : 0);
-        SVG(`#m${i}`).opacity(on ? 100 : 0);
-        SVG(`#lt${i}`).opacity(on ? 100 : 0);
-        SVG(`#lb${i}`).opacity(on ? 100 : 0);
-        SVG(`#rt${i}`).opacity(on ? 100 : 0);
-        SVG(`#rb${i}`).opacity(on ? 100 : 0);
-    }
-}
-
 const animateCayzacOnStart = () => {
     let timer = setInterval(() => {
         writeOnDigitScreen(`  ${getRandomInt(9)}${getRandomInt(9)}  `);
@@ -353,7 +341,8 @@ const getRandomInt = (max) => {
   }
 
 SVG.on(document, 'DOMContentLoaded', () => {
-    lightUpNixies();
-    turnDigits(false);
     animateCayzacOnStart();
+    setTimeout(() =>{
+        lightUpNixies();
+    }, 1000)
 })
