@@ -1,28 +1,30 @@
-const lightUpNixies = () => {
+const lightUpNixies = (delay) => {
     const letters = ["R","O","M","A","I","N"];
     for (let i =0;i<letters.length;i++) {
         const letterSVGon = SVG(`#${letters[i]}-on`);
         const letterSVGoff = SVG(`#${letters[i]}-off`);
         letterSVGon.opacity(0);
-        if (letters[i] === letters[getRandomInt(6)])  {
-            setTimeout(() =>{
-                letterSVGon.opacity(100);
-                letterSVGoff.opacity(0);
-            }, 700);
-            setTimeout(() =>{
-                letterSVGon.opacity(0);
-                letterSVGoff.opacity(100);
-            }, 900);
-            setTimeout(() =>{
-                letterSVGon.opacity(100);
-                letterSVGoff.opacity(0);
-            }, 1500 + 100*getRandomInt(6))
-        } else {
-            setTimeout(() =>{
-                letterSVGon.opacity(100);
-                letterSVGoff.opacity(0);
-            }, 100 + 200*getRandomInt(6) + getRandomInt(100))
-        }
+        setTimeout(() =>{
+            if (letters[i] === letters[getRandomInt(6)])  {
+                setTimeout(() =>{
+                    letterSVGon.opacity(100);
+                    letterSVGoff.opacity(0);
+                }, 700);
+                setTimeout(() =>{
+                    letterSVGon.opacity(0);
+                    letterSVGoff.opacity(100);
+                }, 900);
+                setTimeout(() =>{
+                    letterSVGon.opacity(100);
+                    letterSVGoff.opacity(0);
+                }, 1500 + 100*getRandomInt(6))
+            } else {
+                setTimeout(() =>{
+                    letterSVGon.opacity(100);
+                    letterSVGoff.opacity(0);
+                }, 100 + 200*getRandomInt(6) + getRandomInt(100))
+            }
+        }, delay)
     }
 }
 
@@ -342,7 +344,5 @@ const getRandomInt = (max) => {
 
 SVG.on(document, 'DOMContentLoaded', () => {
     animateCayzacOnStart();
-    setTimeout(() =>{
-        lightUpNixies();
-    }, 1000)
+    lightUpNixies(1000);
 })
