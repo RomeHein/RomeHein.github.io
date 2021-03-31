@@ -338,11 +338,34 @@ const writeOnDigitScreen = (string) => {
     }
 }
 
-const getRandomInt = (max) => {
-    return Math.floor(Math.random() * Math.floor(max));
-  }
+const transformElementById = (id, matrix) => {
+    let moveMe = document.getElementById(id);
+    let matrix3dRule = `matrix3d(${matrix.join(',')})`;
+    moveMe.style.transform = matrix3dRule;
+    return moveMe
+}
 
 SVG.on(document, 'DOMContentLoaded', () => {
     animateCayzacOnStart();
     lightUpNixies(1000);
+
+    const cube = SVG("#cube");
+    const homeface = SVG("#home-face");
+    homeface.on('mouseover', () => {
+        const transformMatrixe = translationMatrix(0,-10,0);
+        transformElementById('cube',transformMatrixe);
+    })
+    homeface.on('mouseout', () => {
+        const transformMatrixe = translationMatrix(0,10,0);
+        transformElementById('cube',transformMatrixe);
+    })
+    const backendButton = SVG("#button-frontend");
+    backendButton.on('click', () => {
+        const rotationMatrice = multiplyMatrices(scaleMatrix(1.05,0.8,1),rotateAroundZAxis(-Math.PI*0.65));
+        const rotationMatrice2 = multiplyMatrices(rotateAroundXAxis(Math.PI*0.26),rotateAroundZAxis(-Math.PI*0.65));
+        transformElementById('cube',rotationMatrice);
+
+        // let moveMe = document.getElementById("cube");
+        // moveMe.style['webkitTransform'] = 'rotateX(' + 45 + 'deg) rotateY(' + 0 + 'deg) rotateZ(' + 117 + 'deg)';	
+    })
 })

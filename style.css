@@ -1,3 +1,43 @@
 body {
     margin: 0;
+    background-color: #070B3D;
+    display: flex;
+    width: 100%;
+    padding-bottom: 100%;
+    vertical-align: middle;
+    overflow: hidden;
+}
+
+#side {
+    display: inline-block;
+    position: absolute;
+    width: 100%;
+    max-width: 800px;
+    fill-rule:evenodd;
+    clip-rule:evenodd;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-miterlimit:1.5;
+}
+
+#cube {
+    transition: transform 1000ms ease-in-out;
+    position: relative;
+    margin: auto;
+    top: 140px;
+    width: 100%;
+    max-width: 1300px;
+    fill-rule:evenodd;
+    clip-rule:evenodd;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-miterlimit:1.5;
+}
+
+.passive-component {
+    pointer-events : none;
+}
+
+.rotateTest {
+    transform: matrix3d();
 }
