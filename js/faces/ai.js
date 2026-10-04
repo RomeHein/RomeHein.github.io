@@ -302,7 +302,8 @@ function aiTick(now) {
   // closed brain on a still cube: a third of the frame rate is plenty (the lid dims it anyway)
   const still = aiLastQ === Q;
   aiLastQ = Q;
-  if (ROLL.active && !ROLL.keep.has("front")) {
+  // nothing to draw while the AI face is turned away (during a roll the brain keeps moving with its face)
+  if (cullState.front) {
     if (!AIST.hid) {
       AIST.ctx.setTransform(1, 0, 0, 1, 0, 0);
       AIST.ctx.clearRect(0, 0, AIST.cv.width, AIST.cv.height);

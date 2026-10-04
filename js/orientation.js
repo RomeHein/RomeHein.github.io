@@ -182,7 +182,8 @@ function cull(M) {
   }
 }
 /* During a roll only the face we leave and the face we go to keep animating; everything else
-   (other faces, the tower, the background cubes, the brain unless the AI face is involved) pauses. */
+   (other faces, the tower, the background cubes) pauses. The brain keeps being drawn while its face
+   is in view: it has to move with the cube. */
 const ROLL = { active: false, keep: new Set() };
 function upFace(q) {
   const M = qMat(q);
