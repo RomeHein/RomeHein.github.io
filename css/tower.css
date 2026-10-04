@@ -1,0 +1,390 @@
+/* The tower: WELCOME nixie tubes and the 14-segment display */
+
+/* ---------------- nixie tubes: WELCOME ---------------- */
+.nx {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  transform-style: preserve-3d;
+  --R: 0deg;
+  /* camera & light seen from the wall's frame (x → cube z, y → down, z → out of the wall) */
+  --vx: 0.5774;
+  --vy: -0.5774;
+  --vz: 0.5774;
+  --lx: 0.7071;
+  --ly: 0;
+}
+.nx-plate {
+  --t: #2a2f86;
+  --sd: #15135a;
+  --sl: #4c2c96;
+}
+.nx-plate .bx-top {
+  box-shadow: inset 0 0 0 1px #3a3f9a;
+}
+.nx-sock {
+  --cs0: #0b0b2e;
+  --cs1: #17163f;
+  --cs2: #2a2856;
+  --ct: #1d1b45;
+}
+.nx-sock .cyl-top {
+  box-shadow: inset 0 0 0 2px #3b3868;
+}
+/* glass envelope: exact projected outline of a domed cylinder for the tower's fixed camera, drawn facing the camera */
+/* glass drawn in a 2D layer above the (static) tower: exact outline, no 3D sorting glitches */
+.nx-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1440px;
+  height: 900px;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+.nx-glass .glow,
+.nx-glass .bloom {
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.nx-glass.warm .glow {
+  opacity: 0.9;
+}
+.nx-glass.warm .bloom {
+  opacity: 1;
+}
+.nx-glass.flick .glow,
+.nx-glass.flick .bloom {
+  animation: flick 0.7s steps(1, end);
+}
+.nx-glass-old .cyl-body {
+  border-radius: 20px 20px 3px 3px / 25px 25px 3px 3px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 226, 205, 0.13) 0%,
+    rgba(255, 190, 150, 0.05) 38%,
+    rgba(255, 170, 120, 0.07) 62%,
+    rgba(255, 230, 210, 0.18) 86%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1.2px rgba(255, 222, 200, 0.34),
+    inset 0 -8px 14px rgba(255, 120, 40, calc(0.18 * var(--on, 1)));
+}
+.nx-glass .cyl-body::before {
+  content: "";
+  position: absolute;
+  left: 16%;
+  top: 9%;
+  bottom: 12%;
+  width: 11%;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.08));
+}
+.nx-glass .cyl-body::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  width: 5px;
+  height: 6px;
+  margin-left: -2.5px;
+  border-radius: 3px 3px 1px 1px;
+  background: rgba(255, 230, 210, 0.35);
+}
+.nx-anode,
+.nx-glyph {
+  position: absolute;
+  left: 18px;
+  top: 14px;
+  width: 24px;
+  height: 32px;
+  backface-visibility: visible;
+}
+.nx-anode {
+  background:
+    repeating-linear-gradient(60deg, rgba(150, 95, 60, 0.55) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-60deg, rgba(150, 95, 60, 0.55) 0 1px, transparent 1px 4px);
+  opacity: 0.55;
+}
+.nx-glyph {
+  display: grid;
+  place-items: center;
+  font-family: "Chakra Petch", system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 27px;
+  line-height: 1;
+}
+.nx-glyph span {
+  grid-area: 1/1;
+}
+.nx-glyph .off {
+  color: rgba(170, 140, 120, 0.22);
+  -webkit-text-stroke: 0.4px rgba(200, 170, 150, 0.3);
+}
+.nx-glyph .lit {
+  color: #ffd9a8;
+  opacity: var(--on, 1);
+  text-shadow:
+    0 0 1px #fff4e0,
+    0 0 3px #ffb45c,
+    0 0 7px #ff8a1e,
+    0 0 14px #ff6a00,
+    0 0 26px rgba(255, 90, 0, 0.7);
+}
+.nx-halo {
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  margin: -38px 0 0 -38px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(circle, rgba(255, 120, 30, 0.2) 0%, rgba(255, 90, 20, 0.07) 45%, transparent 70%);
+  opacity: var(--on, 1);
+}
+.nx-tube {
+  --on: 0;
+  transition: --on 0.4s;
+}
+@property --on {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+.nx-tube.warm {
+  --on: 1;
+}
+.nx-tube.hum .lit {
+  animation: hum 3.2s ease-in-out infinite;
+}
+@keyframes hum {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.12);
+  }
+}
+.nx-tube.flick .lit,
+.nx-halo.flick {
+  animation: flick 0.7s steps(1, end);
+}
+@keyframes flick {
+  0% {
+    opacity: 1;
+  }
+  8% {
+    opacity: 0.25;
+  }
+  14% {
+    opacity: 1;
+  }
+  22% {
+    opacity: 0.5;
+  }
+  30% {
+    opacity: 0.08;
+  }
+  38% {
+    opacity: 0.9;
+  }
+  46% {
+    opacity: 0.35;
+  }
+  54%,
+  100% {
+    opacity: 1;
+  }
+}
+.romain {
+  position: absolute;
+  right: 28px;
+  top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--f-label);
+  font-size: 44px;
+  line-height: 1;
+  color: #fff4fc;
+  -webkit-text-stroke: 0;
+  text-shadow:
+    0 0 2px #fff,
+    0 0 10px var(--pink),
+    0 0 22px var(--pink);
+  user-select: none;
+}
+.romain span {
+  display: block;
+}
+/* ---------------- 3D segment display (tower front) ---------------- */
+.dsp-plane {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 336px;
+  height: 1400px;
+  transform-style: preserve-3d;
+  --R: 0deg;
+  /* camera & light seen from the tower's front face (x right, y down, z out of the wall) */
+  --vx: -0.5774;
+  --vy: -0.5774;
+  --vz: 0.5774;
+  --lx: 0.7071;
+  --ly: 0;
+}
+.dsp {
+  --t: #1d2168;
+  --sd: #262b7e;
+  --sl: #4c2b96;
+}
+.dsp .bx-top {
+  box-shadow: inset 0 0 0 2px #2c3190;
+}
+.wall-plane {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 336px;
+  height: 1400px;
+  transform-origin: 0 0;
+  transform-style: preserve-3d;
+  --R: 0deg;
+  --vx: 0.5774;
+  --vy: -0.5774;
+  --vz: 0.5774;
+  --lx: 0.7071;
+  --ly: 0;
+}
+.smdr-body {
+  --t: #1c1b40;
+  --sd: #0d0c28;
+  --sl: #2e2b62;
+}
+.smdr-body .bx-top {
+  background: linear-gradient(90deg, transparent 40%, rgba(160, 150, 230, 0.35) 40% 60%, transparent 60%), var(--t);
+}
+.smdr-cap {
+  --t: #cfd2df;
+  --sd: #8d91a8;
+  --sl: #dcdee9;
+}
+.ic-body {
+  --t: #1b1d4c;
+  --sd: #0e0f33;
+  --sl: #2f2b70;
+}
+.ic-body .bx-top {
+  box-shadow: inset 0 0 0 1px #2a2d6e;
+}
+.ic-dot {
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0a0b2a;
+}
+.ic-mark {
+  position: absolute;
+  left: 24px;
+  right: 18px;
+  height: 2px;
+  background: #4c55a8;
+  border-radius: 1px;
+}
+.ic-pin {
+  --t: #c3c7d6;
+  --sd: #8a8ea5;
+  --sl: #d4d7e3;
+}
+.dsp-leg {
+  --t: #2b7f95;
+  --sd: #1f5f72;
+  --sl: #3aa0b8;
+}
+.dsp-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.sg .l {
+  fill: #1f2b70;
+}
+.sg .d {
+  fill: #141d58;
+}
+.sg.on .l {
+  fill: #9ccdff;
+}
+.sg.on .d {
+  fill: #3f8ae8;
+}
+.sg.on {
+  filter: drop-shadow(0 0 2px rgba(80, 160, 255, 0.9));
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.seg-panel {
+  position: absolute;
+  left: 18px;
+  top: 128px;
+  width: 304px;
+  height: 98px;
+  padding: 14px 12px;
+  background: #101358;
+  box-shadow: inset 0 0 0 3px #2d2385;
+}
+.seg-panel svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.seg line {
+  stroke: #172a6a;
+  stroke-width: 4.4;
+  stroke-linecap: round;
+}
+.seg line.on {
+  stroke: var(--seg);
+  filter: drop-shadow(0 0 3px var(--seg));
+}
+.soc {
+  --cs0: #0a0c42;
+  --cs1: #0e114f;
+  --cs2: #141862;
+  --ct: var(--knob-top);
+}
+.soc .cyl-top {
+  color: var(--lcd-text);
+  text-decoration: none;
+  box-shadow: inset 0 0 0 2px #2c3088;
+  transition:
+    box-shadow 0.2s,
+    color 0.2s;
+}
+.soc .cyl-top svg {
+  width: 26px;
+  height: 26px;
+}
+.soc .cyl-top:hover {
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 2px var(--lcd-text),
+    inset 0 0 12px color-mix(in srgb, var(--lcd-text) 50%, transparent);
+}

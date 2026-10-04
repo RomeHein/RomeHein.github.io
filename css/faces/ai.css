@@ -1,0 +1,285 @@
+/* AI face (cube front): the neural core silo */
+
+/* ---------------- AI face: neural core silo ---------------- */
+.cube .f-front {
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 103.5px, #000 104.5px);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 103.5px, #000 104.5px);
+}
+.f-front > .fwrap {
+  display: none;
+}
+.aigroup {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 560px;
+  height: 560px;
+  margin: -280px 0 0 -280px;
+  transform: translateZ(280.5px);
+  transform-style: preserve-3d;
+  pointer-events: none;
+  --R: 0deg;
+  --glow: 0.35;
+}
+.aigroup.open {
+  --glow: 1;
+}
+.ai-pads {
+  position: absolute;
+  inset: 0;
+  width: 560px;
+  height: 560px;
+  transform: translateZ(0.2px);
+}
+.silo-wall {
+  position: absolute;
+  transform-origin: 50% 0;
+  backface-visibility: hidden;
+  filter: brightness(calc(var(--b0, 1) * var(--lum, 1)));
+  background:
+    repeating-linear-gradient(180deg, transparent 0 24px, rgba(120, 130, 255, 0.16) 24px 26px),
+    linear-gradient(180deg, #22266a 0%, #15185a 35%, #0a0b33 75%, #05061c 100%);
+}
+.silo-wall.strip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  bottom: 30px;
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #ff9be6, #ff6fd8 40%, transparent);
+  opacity: calc(0.35 + 0.65 * var(--glow));
+  box-shadow: 0 0 8px #ff6fd8;
+  transition: opacity 1s;
+}
+.silo-floor {
+  position: absolute;
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(circle, transparent 0 16px, rgba(255, 140, 230, 0.18) 16px 17.5px),
+    radial-gradient(
+      circle,
+      rgba(255, 120, 220, calc(0.35 + 0.4 * var(--glow))) 0%,
+      rgba(120, 40, 170, 0.35) 38%,
+      #0a0930 72%
+    );
+  transition: background 1s;
+}
+.ai-glass {
+  position: absolute;
+  top: 176px;
+  width: 104px;
+  height: 208px;
+  transition: transform 1.3s cubic-bezier(0.65, 0.05, 0.25, 1);
+  background: linear-gradient(
+    135deg,
+    rgba(200, 222, 255, 0.26),
+    rgba(140, 170, 255, 0.07) 42%,
+    rgba(210, 230, 255, 0.2) 70%,
+    rgba(160, 190, 255, 0.08)
+  );
+  box-shadow: inset 0 0 0 1.5px rgba(205, 225, 255, 0.35);
+}
+.ai-glass.l {
+  left: 176px;
+  border-radius: 104px 0 0 104px;
+  transform: translateZ(-2px);
+}
+.ai-glass.r {
+  left: 280px;
+  border-radius: 0 104px 104px 0;
+  transform: translateZ(-2px);
+}
+.ai-glass.l::after,
+.ai-glass.r::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  width: 2px;
+  background: rgba(235, 245, 255, 0.55);
+}
+.ai-glass.l::after {
+  right: 0;
+}
+.ai-glass.r::after {
+  left: 0;
+}
+.aigroup.open .ai-glass.l {
+  transform: translate3d(-112px, 0, -2px);
+}
+.aigroup.open .ai-glass.r {
+  transform: translate3d(112px, 0, -2px);
+}
+.ai-ring {
+  position: absolute;
+  left: 280px;
+  top: 280px;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  transition: transform 1.4s cubic-bezier(0.65, 0.05, 0.25, 1);
+}
+.ring-wall {
+  position: absolute;
+  transform-origin: 50% 0;
+  backface-visibility: hidden;
+  filter: brightness(calc(var(--b0, 1) * var(--lum, 1)));
+  background: linear-gradient(180deg, #3a4096, #1b1f66);
+}
+.ring-top {
+  position: absolute;
+  left: -140px;
+  top: -140px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  transform: translateZ(6px);
+  backface-visibility: hidden;
+  background: radial-gradient(
+    circle,
+    transparent 0 104px,
+    #4b3aa0 104px 106px,
+    #2d3288 106px 112px,
+    #262b7c 112px 128px,
+    #343a96 128px 131px,
+    #20256e 131px 140px
+  );
+  -webkit-mask-image: radial-gradient(circle, transparent 103.5px, #000 104px);
+  mask-image: radial-gradient(circle, transparent 103.5px, #000 104px);
+}
+.ring-top::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(170, 180, 255, 0.45) 0 0.8deg, transparent 0.8deg 7.5deg);
+  -webkit-mask-image: radial-gradient(circle, transparent 0 132px, #000 132.5px 138px, transparent 138.5px);
+  mask-image: radial-gradient(circle, transparent 0 132px, #000 132.5px 138px, transparent 138.5px);
+}
+.ring-top::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 104px transparent;
+  background: radial-gradient(
+    circle,
+    transparent 0 103px,
+    rgba(255, 111, 216, calc(0.25 + 0.6 * var(--glow))) 104px 106px,
+    transparent 108px
+  );
+  transition: background 1s;
+}
+.ring-top svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.ring-bolt {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #8d93c8, #3a3f86 70%);
+  box-shadow: 0 0 0 1px #1a1d5c;
+}
+.smdc-body {
+  --t: #c49a62;
+  --sd: #8a6a40;
+  --sl: #d6b07a;
+}
+.sot-body {
+  --t: #17173a;
+  --sd: #0b0b24;
+  --sl: #26244e;
+}
+.sot-body .bx-top {
+  box-shadow: inset 0 0 0 1px #2a2952;
+}
+.ai-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 800px;
+  height: 800px;
+  pointer-events: none;
+  z-index: 4;
+}
+/* data streaming along the AI face's traces towards the core while it is open */
+.ai-flow-svg {
+  z-index: 2 !important;
+  filter: drop-shadow(0 0 3px #ff6fd8);
+}
+.ai-flow {
+  fill: none;
+  stroke: #ffb3ef;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  opacity: 0;
+}
+.brain-core {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: brainPulse 2.2s ease-in-out infinite;
+}
+@keyframes brainPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.045);
+    filter: brightness(1.35);
+  }
+}
+.brain-halo {
+  animation: haloPulse 2.2s ease-in-out infinite;
+}
+/* inside the silo only the brain itself shows: its halo and tethers appear once it is out */
+.brain-halo-wrap,
+.brain-cables {
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.aigroup.risen .brain-halo-wrap {
+  opacity: 1;
+  transition: opacity 1.2s;
+}
+.aigroup.risen .brain-cables {
+  opacity: 0.7;
+  transition: opacity 1.2s;
+}
+.brain-core path[stroke="#ffb3ef"] {
+  filter: drop-shadow(0 0 4px #ff6fd8) drop-shadow(0 0 10px rgba(255, 111, 216, 0.6));
+}
+@keyframes haloPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.ai-beam {
+  stroke-dasharray: 3 7;
+  animation: beam 0.6s linear infinite;
+}
+@keyframes beam {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+.ai-orbit {
+  transition: opacity 0.8s;
+}
+.brain-cable {
+  stroke-dasharray: 2 6;
+  animation: beam 1s linear infinite;
+}

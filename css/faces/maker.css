@@ -1,0 +1,544 @@
+/* Maker face (cube back): the rocket factory */
+
+/* ---------------- Maker face: a pop-up micro factory ---------------- */
+.f-back > .fwrap {
+  display: none;
+}
+.makgroup {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 560px;
+  height: 560px;
+  margin: -280px 0 0 -280px;
+  transform: rotateY(180deg) translateZ(280.5px);
+  transform-style: preserve-3d;
+  pointer-events: none;
+  --R: 0deg;
+}
+.mk-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 560px;
+  height: 560px;
+  transform-style: preserve-3d;
+  transform: rotateZ(270deg) scale3d(1.25, 1.25, 1.25);
+  --R: 270deg;
+}
+.mk-g {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+.mk-dark {
+  --t: #1d2050;
+  --sd: #10123a;
+  --sl: #3a2f7a;
+}
+.mk-frame {
+  --t: #2b2f78;
+  --sd: #171a4c;
+  --sl: #4a3c9a;
+}
+.mk-metal {
+  --t: #9aa1c8;
+  --sd: #555b86;
+  --sl: #c3c8ea;
+}
+.mk-amber {
+  --t: #ffb547;
+  --sd: #b37420;
+  --sl: #ffd08a;
+}
+.mk-bed {
+  --t: #2a2f6e;
+  --sd: #151845;
+  --sl: #3b3f8a;
+}
+.mk-bed .bx-top {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 11px, rgba(255, 181, 71, 0.18) 11px 12px),
+    repeating-linear-gradient(90deg, transparent 0 11px, rgba(255, 181, 71, 0.18) 11px 12px), #23275e;
+  box-shadow: inset 0 0 0 1px #ffb54766;
+}
+.mk-lcd .bx-top {
+  background: #0a1a2e;
+  color: #ffb547;
+  font: 7px var(--f-mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.06em;
+}
+.mk-belt {
+  --t: #15173d;
+  --sd: #0c0e2c;
+  --sl: #2a2466;
+}
+.mk-belt.ay .bx-top {
+  background: repeating-linear-gradient(0deg, #15173d 0 7px, #262a6c 7px 14px);
+  box-shadow:
+    inset 3px 0 0 #3a3f8a,
+    inset -3px 0 0 #3a3f8a;
+  animation: beltNY 0.35s linear infinite paused;
+}
+.mk-belt.ax .bx-top {
+  background: repeating-linear-gradient(90deg, #15173d 0 7px, #262a6c 7px 14px);
+  box-shadow:
+    inset 0 3px 0 #3a3f8a,
+    inset 0 -3px 0 #3a3f8a;
+  animation: beltL 0.35s linear infinite paused;
+}
+.mk-belt.run .bx-top {
+  animation-play-state: running;
+}
+@keyframes beltL {
+  to {
+    background-position: -14px 0;
+  }
+}
+@keyframes beltNY {
+  to {
+    background-position: 0 -14px;
+  }
+}
+.mk-pit {
+  position: absolute;
+  background: radial-gradient(circle, #000 0%, #050520 70%, #0b0d35 100%);
+  box-shadow: inset 0 0 0 2px #ffb54755;
+  transform: translateZ(0.3px);
+}
+.mk-door {
+  position: absolute;
+  background: linear-gradient(135deg, #2c3080, #1b1f5a);
+  box-shadow: inset 0 0 0 1px #4a50a8;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.5, 0, 0.3, 1);
+}
+.mk-door.stripe {
+  background: repeating-linear-gradient(45deg, #ffb547 0 5px, #1b1f5a 5px 10px);
+}
+.mk-gear {
+  --cs0: #141640;
+  --cs1: #262a66;
+  --cs2: #3a3f8a;
+  --ct: #1b1e52;
+}
+.mk-gear .cyl-top {
+  overflow: hidden;
+}
+.gear {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transform: rotate(var(--ga, 0deg));
+  background:
+    radial-gradient(circle, #2e3278 0 42%, transparent 43%),
+    repeating-conic-gradient(from 0deg, #9aa1c8 0 7deg, #3a3f8a 7deg 15deg);
+  box-shadow: inset 0 0 0 2px #151845;
+}
+.gear::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26%;
+  height: 26%;
+  margin: -13% 0 0 -13%;
+  border-radius: 50%;
+  background: #ffb547;
+  box-shadow: 0 0 0 2px #151845;
+}
+.mk-lens {
+  --cs0: #153a4a;
+  --cs1: #1f5a70;
+  --cs2: #2b7f95;
+  --ct: #7ff3ff;
+}
+.mk-lens .cyl-top {
+  background: radial-gradient(circle, #fff 0 18%, #7ff3ff 30%, #1f5a70 70%);
+  box-shadow: inset 0 0 0 2px #0f2a36;
+}
+/* ---------------- Maker face: a rocket factory ---------------- */
+.mk-overlay {
+  position: absolute;
+  left: 150px;
+  top: 0;
+  width: 900px;
+  height: 720px;
+  pointer-events: none;
+  z-index: 4;
+}
+.mk-fab {
+  --t: #173b3b;
+  --sd: #0c2424;
+  --sl: #245a5a;
+}
+.mk-fab .bx-top {
+  box-shadow: inset 0 0 0 1.5px #2b8f7a;
+}
+.mk-mag {
+  --t: #1d2050;
+  --sd: #10123a;
+  --sl: #3a2f7a;
+}
+.mk-mag .bx-front {
+  background: repeating-linear-gradient(0deg, #1f7a46 0 2px, #0b0d33 2px 4px);
+}
+.mk-slot {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 0;
+  height: 5px;
+  background: #02031c;
+  box-shadow: inset 0 0 0 1px #2b8f7a;
+}
+.mk-pcb {
+  --t: #1f7a46;
+  --sd: #0f4a2a;
+  --sl: #2f9a5e;
+}
+.mk-pcb .bx-top {
+  transform-style: flat;
+  box-shadow: inset 0 0 0 1px #2f9a5e;
+}
+.mk-pcbart {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.mk-pcbart .et {
+  fill: none;
+  stroke: #e3c37a;
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mk-pcbart .pd {
+  fill: #f0d890;
+}
+.mk-pcbart .fing {
+  fill: none;
+  stroke: #f0d890;
+  stroke-width: 2.4;
+}
+.mk-chip {
+  --t: #1b1d2e;
+  --sd: #0b0c18;
+  --sl: #2a2c44;
+}
+.mk-chip .bx-top {
+  box-shadow: inset 0 0 0 0.8px #3a3d5a;
+}
+.mk-res {
+  --t: #d8c6a0;
+  --sd: #8a7a58;
+  --sl: #efe2c4;
+}
+.mk-ledp {
+  --t: #5a2a4a;
+  --sd: #3a1730;
+  --sl: #7a3a6a;
+}
+.mk-g.on .mk-ledp {
+  --t: #ffb3ef;
+  --sd: #ff6fd8;
+  --sl: #ffd6f4;
+}
+.mk-g.on .mk-ledp .bx-top {
+  box-shadow: 0 0 8px 2px #ff6fd8;
+}
+.mk-asm {
+  --t: #2e2468;
+  --sd: #1b1550;
+  --sl: #4a3a98;
+}
+.mk-asm .bx-top {
+  box-shadow: inset 0 0 0 1.5px #6a55c8;
+}
+.mk-intake {
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  background: linear-gradient(180deg, #02031c, #0b0d3c);
+  box-shadow: inset 0 0 0 1.5px #ffb54777;
+}
+.mk-shutter {
+  position: absolute;
+  inset: 1.5px;
+  transition: transform 0.45s cubic-bezier(0.5, 0, 0.3, 1);
+}
+.mk-shutter.h {
+  background:
+    linear-gradient(0deg, #ffb547 0 3px, #14163f 3px 4px, transparent 4px),
+    repeating-linear-gradient(180deg, #5a5fa8 0 3px, #3a3f8a 3px 5px, #2b2f78 5px 6px);
+}
+.mk-shutter.v {
+  background:
+    linear-gradient(270deg, #ffb547 0 3px, #14163f 3px 4px, transparent 4px),
+    repeating-linear-gradient(90deg, #5a5fa8 0 3px, #3a3f8a 3px 5px, #2b2f78 5px 6px);
+}
+.mk-shutter.h.open {
+  transform: translateY(-100%);
+}
+.mk-shutter.v.open {
+  transform: translateX(-100%);
+}
+.mk-lamp {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #262a70;
+  box-shadow: inset 0 0 0 1px #4a50a8;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.mk-lamp.on {
+  background: #ffb547;
+  box-shadow: 0 0 8px #ffb547;
+}
+.gear.spin {
+  animation: fanSpin 0.6s linear infinite;
+}
+.mk-pad {
+  --t: #23275e;
+  --sd: #14163f;
+  --sl: #3a3f8a;
+}
+.mk-pad .bx-top {
+  border: 4px solid transparent;
+  background:
+    radial-gradient(circle, #05061e 0 12px, #3a3f8a 12.5px 14px, transparent 14.5px) padding-box,
+    repeating-linear-gradient(90deg, #2b2f78 0 4px, #1d2160 4px 8px) padding-box,
+    repeating-linear-gradient(45deg, #ffb547 0 4px, #14163f 4px 8px) border-box;
+}
+.mk-padl {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #4a1d2a;
+  transition:
+    background 0.1s,
+    box-shadow 0.1s;
+}
+.mk-padl.on {
+  background: #ff5a5a;
+  box-shadow: 0 0 8px #ff5a5a;
+}
+.mk-mast,
+.mk-jib {
+  --t: #ffb547;
+  --sd: #b37420;
+  --sl: #ffd08a;
+}
+.mk-mast .bx-s,
+.mk-jib .bx-s {
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0 5px, rgba(60, 30, 0, 0.5) 5px 6.5px),
+    repeating-linear-gradient(-45deg, transparent 0 5px, rgba(60, 30, 0, 0.5) 5px 6.5px);
+}
+.mk-cab {
+  --t: #2a2f78;
+  --sd: #151845;
+  --sl: #3b3f8a;
+}
+.mk-cab .bx-front,
+.mk-cab .bx-right {
+  background: linear-gradient(180deg, #7ff3ff66, #151845 70%);
+}
+.mk-cw {
+  --t: #3a3f6a;
+  --sd: #22264a;
+  --sl: #555b86;
+}
+.mk-cable {
+  --t: #c3c8ea;
+  --sd: #8a90b8;
+  --sl: #e0e3f5;
+}
+.mk-magnet {
+  --t: #ff6f91;
+  --sd: #a8405c;
+  --sl: #ffa3b8;
+}
+.mk-shell {
+  --cs0: #3d4196;
+  --cs1: #959ce6;
+  --cs2: #dde0ff;
+  --ct: #c4c9f7;
+}
+.mk-shell > .cyl-top {
+  box-shadow: inset 0 0 0 1px #7f86d4;
+}
+.mk-shell > .cyl-bot {
+  box-shadow: 0 0 0 0.8px #2b2f78;
+}
+.mk-shell .cyl-body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(20, 24, 80, 0.06) 0 1px, transparent 1px 2.5px);
+}
+.mk-cone .cyl-body {
+  clip-path: polygon(
+    50% 0,
+    58% 6%,
+    68% 18%,
+    79% 36%,
+    89% 60%,
+    96% 82%,
+    100% 100%,
+    0 100%,
+    4% 82%,
+    11% 60%,
+    21% 36%,
+    32% 18%,
+    42% 6%
+  );
+  background:
+    linear-gradient(180deg, #ff6fd8 0 9%, #23286e 9% 18%, transparent 18%),
+    linear-gradient(90deg, var(--cs0) 0%, var(--cs1) 45%, var(--cs2) 78%, var(--cs1) 100%);
+}
+/* bands and seams: the front half of the rim ellipse at that height */
+.mk-arc {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  height: 18.4px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.mk-arc.seam {
+  border-bottom: 1.1px solid #2b2f78;
+}
+.mk-arc.band {
+  border-bottom: 3px solid #23286e;
+}
+.mk-hull {
+  --t: #aab0ee;
+  --sd: #5c62bc;
+  --sl: #d4d7ff;
+}
+.mk-trim {
+  --t: #ff6fd8;
+  --sd: #a83c8e;
+  --sl: #ffa3e8;
+}
+.mk-nozzle {
+  --cs0: #22264a;
+  --cs1: #555b86;
+  --cs2: #9aa1c8;
+  --ct: #0b0c24;
+}
+.mk-port {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 10px;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #e6fbff, #3a8fb5 55%, #0b1a3a);
+  box-shadow: 0 0 0 1.5px #2b2f78;
+}
+/* the board's bay: an empty dark slot until the assembly fits the board (then: PCB, gold traces, a running LED) */
+.mk-bay {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: 2px;
+  width: 11px;
+  height: 8px;
+  margin-left: -5.5px;
+  border-radius: 1px;
+  background: #05061e;
+  box-shadow:
+    0 0 0 1px #2b2f78,
+    inset 0 1px 2px #000;
+}
+.mk-sec0 .mk-bay {
+  bottom: 1px;
+}
+.mk-sec2 .mk-bay {
+  bottom: 1.5px;
+  height: 5px;
+}
+.mk-bay .pcb {
+  position: absolute;
+  inset: 1px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background:
+    linear-gradient(90deg, transparent 0 18%, #e3c37a 18% 24%, transparent 24% 62%, #1b1d2e 62% 86%, transparent 86%) 0
+      70%/100% 45% no-repeat,
+    linear-gradient(0deg, transparent 0 40%, #e3c37a 40% 52%, transparent 52%),
+    #1f7a46;
+}
+.mk-bay .led {
+  position: absolute;
+  right: 1.5px;
+  top: 1.5px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #ff6fd8;
+  opacity: 0;
+}
+.mk-bay.on .pcb {
+  opacity: 1;
+}
+.mk-bay.on .led {
+  opacity: 1;
+  box-shadow: 0 0 3px #ff6fd8;
+  animation: blink 1s steps(1) infinite;
+}
+.mk-antled {
+  --t: #ff8fd9;
+  --sd: #ff6fd8;
+  --sl: #ffd6f4;
+}
+.mk-antled .bx-top {
+  box-shadow: 0 0 6px 1px #ff6fd8;
+}
+.holo-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 300px;
+  height: 300px;
+  pointer-events: none;
+  z-index: 4;
+}
+.fil-a {
+  --t: #ff6f91;
+  --sd: #a8405c;
+  --sl: #ffa3b8;
+}
+.fil-b {
+  --t: #63e6be;
+  --sd: #2e8f73;
+  --sl: #9ff5da;
+}
+.fil-c {
+  --t: #ffd166;
+  --sd: #b08a2e;
+  --sl: #ffe39c;
+}
+.fil-d {
+  --t: #7aa2ff;
+  --sd: #3e5fb8;
+  --sl: #b0c6ff;
+}

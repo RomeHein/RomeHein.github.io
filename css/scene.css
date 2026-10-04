@@ -1,0 +1,184 @@
+/* Around the cube: background cubes, animations paused while rolling, and the intro */
+
+/* ---------------- background cubes (flat isometric drawings, same projection) ---------------- */
+.bg-cubes {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1440px;
+  height: 900px;
+  overflow: visible;
+  pointer-events: none;
+}
+.bg-cubes.back {
+  z-index: 0;
+  filter: blur(0.6px);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 92%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 92%);
+}
+.bg-cubes.front {
+  z-index: 6;
+  filter: blur(1.6px);
+}
+.bgc-top {
+  fill: #161a52;
+}
+.bgc-left {
+  fill: url(#bgcLit);
+}
+.bgc-front {
+  fill: url(#bgcDark);
+}
+.bgc-edge {
+  fill: none;
+  stroke: rgba(120, 110, 230, 0.18);
+  stroke-width: 1;
+}
+.bgc-tr {
+  fill: none;
+  stroke: rgba(110, 100, 220, 0.28);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bgc-via {
+  fill: none;
+  stroke: rgba(110, 100, 220, 0.35);
+  stroke-width: 1.6;
+}
+.bgc-pulse {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  opacity: 0;
+}
+.front .bgc-top {
+  fill: #0e1142;
+}
+.front .bgc-tr {
+  stroke: rgba(90, 80, 190, 0.3);
+}
+
+/* rolling mode: CSS animations on faces that are not part of the move, and around the cube, pause */
+.frozen .knob .cyl-top,
+.frozen .knob svg,
+.frozen .sw-loop circle,
+.frozen .sw-wheel,
+.frozen .sw-blades,
+.frozen .sw-platter,
+.frozen .sw-gpu .bx-top::after,
+.frozen .sw-belt .bx-top,
+.frozen .mk-belt .bx-top,
+.frozen .typing i,
+.frozen .fret .dot,
+.frozen .tuner .needle,
+body.rolling .nx-tube .lit,
+body.rolling .nx-glass .glow,
+body.rolling .nx-glass .bloom {
+  animation-play-state: paused !important;
+}
+
+/* ---------------- intro: everything off, the chip is placed, power-up ---------------- */
+.tr,
+.fx-tr {
+  transition: opacity 1.2s;
+}
+.chip-txt,
+.lcd-win {
+  transition:
+    opacity 1s,
+    color 1s;
+}
+.world.off .tr,
+.world.off .fx-tr {
+  opacity: 0.28;
+}
+.world.off .knob .cyl-top,
+.world.off .knob svg {
+  animation: none !important;
+}
+.world.off .lcd-win {
+  color: #173654 !important;
+}
+.world.off .chip-txt {
+  opacity: 0.08;
+}
+.world.off .led .dome .cyl-body,
+.world.off .led-cap {
+  filter: brightness(0.45) saturate(0.2);
+}
+.world.off .aigroup {
+  --glow: 0;
+}
+.panel {
+  transition:
+    opacity 0.9s,
+    transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+body.intro .panel {
+  opacity: 0;
+  transform: translateX(24px);
+}
+body.intro .world,
+body.intro .panel {
+  pointer-events: none;
+}
+.col-shaft {
+  --t: #8f96c4;
+  --sd: #4b507e;
+  --sl: #b9bfe6;
+}
+.col-shaft .bx-s {
+  background-image: repeating-linear-gradient(0deg, transparent 0 30px, rgba(0, 0, 0, 0.18) 30px 32px);
+}
+.col-head {
+  --t: #ffb547;
+  --sd: #a86a18;
+  --sl: #ffd08a;
+}
+.col-head .bx-top {
+  background: radial-gradient(circle, #2b2f78 0 30%, transparent 31%), var(--t);
+}
+.col-nozzle {
+  --t: #2b2f78;
+  --sd: #151845;
+  --sl: #3b3f8a;
+}
+.intro-glow {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  margin: -160px 0 0 -160px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(99, 198, 220, 0.55) 0%, rgba(182, 79, 216, 0.25) 35%, transparent 70%);
+  transform: translateZ(0.7px);
+}
+.intro-ring {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  margin: -75px 0 0 -75px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    0 0 0 3px #63c6dc,
+    0 0 22px 4px rgba(99, 198, 220, 0.7),
+    inset 0 0 18px rgba(99, 198, 220, 0.5);
+  transform: translateZ(0.8px) scale(0.5);
+}
+.intro-ring.go {
+  animation: shock 0.8s cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+}
+@keyframes shock {
+  0% {
+    opacity: 1;
+    transform: translateZ(0.8px) scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translateZ(0.8px) scale(3.2);
+  }
+}

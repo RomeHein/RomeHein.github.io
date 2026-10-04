@@ -1,0 +1,657 @@
+/* The board (top face): push-button modules, LCD screen, components and the copper feeds */
+
+/* ---------------- modules ---------------- */
+.module {
+  position: absolute;
+  width: 224px;
+  height: 64px;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+.lcd {
+  --t: var(--mod-top);
+  --sd: #1d0f55;
+  --sl: #3a2182;
+}
+.lcd-win {
+  position: absolute;
+  inset: 8px 9px;
+  padding: 0 7px;
+  background: var(--lcd);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  line-height: 1.12;
+  overflow: hidden;
+  font-family: var(--f-label);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--lcd-text);
+  white-space: nowrap;
+  transition:
+    background 0.4s,
+    color 0.4s,
+    text-shadow 0.4s;
+}
+.module.active .lcd-win {
+  background: #215a9c;
+  color: #fff;
+  text-shadow: 0 0 8px var(--c);
+}
+.lcd-led {
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: #271a5e;
+  transition:
+    background 0.3s,
+    box-shadow 0.3s;
+}
+.module.active .lcd-led {
+  background: var(--c);
+  box-shadow: 0 0 8px 2px var(--c);
+}
+.base {
+  --t: #262a78;
+  --sd: #141560;
+  --sl: #4a2a92;
+}
+.knob {
+  --cs0: #0a0c42;
+  --cs1: #0e114f;
+  --cs2: #141862;
+  --ct: var(--knob-top);
+}
+.knob .cyl-top {
+  box-shadow: inset 0 0 0 2px #2c3088;
+  transition:
+    box-shadow 0.3s,
+    background 0.3s,
+    transform 0.09s ease-out;
+}
+.knob svg {
+  width: 26px;
+  height: 26px;
+  color: var(--lcd-text);
+  transition:
+    color 0.3s,
+    filter 0.3s;
+}
+.module:hover .knob .cyl-top {
+  box-shadow: inset 0 0 0 2px var(--c);
+}
+.module.active .knob .cyl-top {
+  background: #292e84;
+  box-shadow:
+    inset 0 0 0 2px var(--c),
+    inset 0 0 14px color-mix(in srgb, var(--c) 55%, transparent);
+}
+.module.active .knob svg {
+  color: #fff;
+}
+/* pressing compresses the knob (cap goes down), its foot stays on the plate: nothing sinks into the base */
+.knob .cyl-body,
+.mob-knob .cyl-body {
+  transition:
+    height 0.09s ease-out,
+    top 0.09s ease-out;
+}
+/* the main-face buttons breathe softly in their colour, to invite a click */
+@keyframes knobHint {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in srgb, var(--c) 30%, #2c3088),
+      inset 0 0 6px color-mix(in srgb, var(--c) 12%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in srgb, var(--c) 75%, #2c3088),
+      inset 0 0 14px color-mix(in srgb, var(--c) 40%, transparent);
+  }
+}
+@keyframes iconHint {
+  0%,
+  100% {
+    color: var(--lcd-text);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    color: color-mix(in srgb, var(--c) 55%, #fff);
+    filter: drop-shadow(0 0 3px var(--c));
+  }
+}
+.module:not(.active) .knob .cyl-top {
+  animation: knobHint 2.8s ease-in-out infinite;
+  animation-delay: var(--hd, 0s);
+}
+.module:not(.active) .knob svg {
+  animation: iconHint 2.8s ease-in-out infinite;
+  animation-delay: var(--hd, 0s);
+}
+
+/* ---------------- screen ---------------- */
+.scr {
+  --t: #1a1d5e;
+  --sd: #0e1050;
+  --sl: #33207a;
+}
+.display {
+  position: absolute;
+  inset: 7px;
+  background: #050b24;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 0 2px #2a2e84,
+    inset 0 0 34px color-mix(in srgb, var(--accent) 22%, transparent);
+  transition: box-shadow 0.6s;
+}
+@property --off {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.disp-rot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 182px;
+  height: 126px;
+  transform: translate(-50%, -50%) rotate(calc(var(--A) + 45deg + var(--off)));
+  transition: --off 0.45s ease;
+}
+.disp-inner {
+  position: absolute;
+  inset: 6px 7px;
+  font-family: var(--f-mono);
+  color: var(--accent);
+  font-size: 10px;
+  line-height: 1.28;
+  text-shadow: 0 0 5px color-mix(in srgb, var(--accent) 70%, transparent);
+  transition: color 0.5s;
+}
+.disp-head {
+  display: flex;
+  justify-content: space-between;
+  opacity: 0.7;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 3px;
+  margin-bottom: 6px;
+}
+.disp-title {
+  font-family: var(--f-label);
+  font-size: 10px;
+  margin-bottom: 6px;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+.disp-lines div {
+  white-space: pre;
+  overflow: hidden;
+}
+.cursor {
+  display: inline-block;
+  width: 5px;
+  height: 9px;
+  background: currentColor;
+  vertical-align: -1px;
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+.scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 3px);
+}
+.display.glitch .disp-inner {
+  animation: glitch 0.35s steps(2) 1;
+}
+@keyframes glitch {
+  0% {
+    opacity: 0.15;
+    transform: translateX(-3px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(2px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* ---------------- parts ---------------- */
+.chip {
+  --t: #262b7a;
+  --sd: #15135a;
+  --sl: #4a2a92;
+  cursor: pointer;
+}
+.chip .bx-top {
+  background: #262b7a;
+}
+.chip-in {
+  position: absolute;
+  inset: 8px;
+  background: #1f2466;
+  clip-path: polygon(
+    8px 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    0 calc(100% - 8px),
+    0 8px
+  );
+  transition: background 0.3s;
+}
+.chip-in::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, var(--flash, transparent), transparent 72%);
+  opacity: 0;
+}
+.chip.flash .chip-in::after {
+  animation: chipflash 0.9s ease-out;
+}
+@keyframes chipflash {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.chip-txt {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: var(--f-label);
+  color: #6fcfe4;
+  text-align: center;
+  line-height: 1.15;
+  transform: rotate(90deg);
+  z-index: 1;
+}
+.chip-txt > * {
+  display: block;
+  line-height: 1.12;
+  width: 88px;
+  white-space: nowrap;
+  overflow: visible;
+  text-align: center;
+}
+.chip-txt span {
+  font-size: 7px;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+.chip-txt b {
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+.chip-txt i {
+  font-style: normal;
+  font-family: var(--f-label);
+  font-size: 8px;
+  opacity: 0.75;
+  letter-spacing: 0.1em;
+}
+.pad-chip-p {
+  fill: var(--pad);
+}
+.pad-chip-t {
+  fill: #2b7f95;
+}
+.pulses {
+  filter: drop-shadow(0 0 3px var(--wave, #fff)) drop-shadow(0 0 7px var(--wave, #fff));
+}
+.fx-pulses {
+  filter: drop-shadow(0 0 4px var(--wave, #fff));
+}
+.pulse {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.fx-pulse {
+  fill: none;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.sled {
+  position: absolute;
+  top: 5px;
+  width: 5px;
+  height: 5px;
+  background: #3a3f8f;
+}
+.sled.on {
+  background: var(--sc, #fff);
+  box-shadow: 0 0 6px var(--sc, #fff);
+}
+.part {
+  position: absolute;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+.leg {
+  --cs0: #5b4a9e;
+  --cs1: #8a7cc8;
+  --cs2: #b7aee6;
+}
+
+/* LED (5mm): legs, flange ring, translucent dome with the lead frame inside */
+.led .flange {
+  --cs0: color-mix(in srgb, var(--lc) 25%, #07082e);
+  --cs1: color-mix(in srgb, var(--lc) 38%, #07082e);
+  --cs2: color-mix(in srgb, var(--lc) 48%, #07082e);
+  --ct: color-mix(in srgb, var(--lc) 58%, #2a2f80);
+}
+.led .dome .cyl-body {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--lc) 38%, transparent) 0%,
+    color-mix(in srgb, var(--lc) 62%, transparent) 22%,
+    color-mix(in srgb, var(--lc) 78%, transparent) 50%,
+    color-mix(in srgb, var(--lc) 60%, transparent) 78%,
+    color-mix(in srgb, var(--lc) 34%, transparent) 100%
+  );
+  box-shadow:
+    inset 1.4px 0 0 color-mix(in srgb, var(--lc) 50%, #fff),
+    inset -1.4px 0 0 color-mix(in srgb, var(--lc) 50%, #fff);
+  transition: filter 0.12s;
+}
+.led .dome .cyl-body::before {
+  content: "";
+  position: absolute;
+  left: 16%;
+  top: 0;
+  bottom: 8%;
+  width: 13%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.08));
+}
+/* the dome: a hemisphere's outline is a semicircle from any angle → a camera-facing disc, top half kept */
+.led-cap {
+  position: absolute;
+  border-radius: 50%;
+  clip-path: inset(0 0 50% 0);
+  backface-visibility: visible;
+  --bb: atan2(
+    calc(-1 * (var(--vx) * cos(var(--R)) + var(--vy) * sin(var(--R)))),
+    calc(var(--vy) * cos(var(--R)) - var(--vx) * sin(var(--R)))
+  );
+  --el: atan2(var(--vz), sqrt(calc(var(--vx) * var(--vx) + var(--vy) * var(--vy))));
+  transform: translateZ(var(--zc)) rotateZ(var(--bb)) rotateX(calc(var(--el) - 90deg));
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255, 255, 255, 0.7) 0 8%, rgba(255, 255, 255, 0.18) 20%, transparent 34%),
+    radial-gradient(
+      circle at 50% 70%,
+      color-mix(in srgb, var(--lc) 80%, transparent) 0%,
+      color-mix(in srgb, var(--lc) 58%, transparent) 55%,
+      color-mix(in srgb, var(--lc) 36%, transparent) 100%
+    );
+  box-shadow: inset 0 0 0 1.4px color-mix(in srgb, var(--lc) 50%, #fff);
+  transition: filter 0.12s;
+}
+.lf {
+  position: absolute;
+  bottom: 3px;
+  background: color-mix(in srgb, var(--lc) 40%, #fff);
+  opacity: 0.45;
+}
+.lf1 {
+  left: 38%;
+  width: 3px;
+  height: 60%;
+  clip-path: polygon(0 18%, 100% 0, 100% 100%, 0 100%);
+}
+.lf2 {
+  left: 54%;
+  width: 2.4px;
+  height: 70%;
+  clip-path: polygon(0 0, 100% 12%, 60% 40%, 100% 60%, 100% 100%, 0 100%);
+}
+.led.on .dome .cyl-body,
+.led.on .led-cap {
+  filter: brightness(1.55) saturate(1.2);
+}
+.led.on .flange .cyl-top {
+  filter: brightness(1.4);
+}
+
+/* electrolytic capacitor */
+.capc .cbody {
+  --ct: #241464;
+}
+.capc .cbody {
+  --cgs: #351b76 0%, #4a2991 32%, #2c176b 70%, #140f4e 100%;
+}
+.capc .cmain > .cyl-bot {
+  box-shadow: 0 0 0 1.5px #140b44;
+}
+.capc .cgroove .cyl-body {
+  background: linear-gradient(90deg, #1f1060, #2a176c 40%, #0f0c44);
+}
+.capc .cmain .cyl-body::after {
+  content: "";
+  position: absolute;
+  right: 21%;
+  width: 5px;
+  top: 14%;
+  bottom: 22%;
+  border-radius: 3px;
+  background: #4c8fd8;
+}
+.capc .cmain .cyl-top {
+  background: #262a7a;
+  box-shadow: inset 0 0 0 1px #1a1d62;
+}
+.cap-face {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: #20538d;
+  display: grid;
+  place-items: center;
+}
+.cap-x {
+  width: 84%;
+  height: 84%;
+}
+
+/* axial resistor: lying cylinder facing the camera, end caps, bent leads */
+.lc-body {
+  position: absolute;
+  transform: translateZ(var(--zc))
+    rotateX(atan2(calc(var(--vx) * sin(var(--R)) - var(--vy) * cos(var(--R))), var(--vz)));
+  background: linear-gradient(
+    90deg,
+    #1f4a88 0 11%,
+    #18377a 11% 15%,
+    #22508f 15% 56%,
+    #5cb9e6 56% 62%,
+    #b252d2 62% 69%,
+    #22508f 69% 74%,
+    #7b3fb8 74% 80%,
+    #22508f 80% 89%,
+    #18377a 89% 93%,
+    #1f4a88 93%
+  );
+}
+.lc-body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 40%, rgba(0, 0, 20, 0.35));
+}
+.lc-cap {
+  position: absolute;
+  border-radius: 50%;
+  background: #0c0f4c;
+  box-shadow: inset 0 0 0 2px #1d3f7c;
+  backface-visibility: hidden;
+  transform: translateZ(var(--zc)) rotateY(var(--ry));
+}
+.lead {
+  --t: #8a62d0;
+  --sd: #4b2c93;
+  --sl: #7a52c4;
+}
+
+/* TO-220 regulator */
+.to-body {
+  --t: #262a78;
+  --sd: #13115a;
+  --sl: #4b2a93;
+}
+.to-mark {
+  position: absolute;
+  left: 14%;
+  height: 3px;
+  background: #7b69c9;
+  border-radius: 1px;
+}
+.to-tab {
+  --t: #c4c8d8;
+  --sd: #7d8299;
+  --sl: #b3b8cc;
+}
+.to-tab .bx-front,
+.to-tab .bx-back,
+.to-tab .bx-top {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.to-body .bx-front,
+.to-body .bx-back,
+.to-body .bx-top {
+  box-shadow: inset 0 0 0 1px rgba(150, 140, 255, 0.25);
+}
+.to-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: #1b1e57;
+  box-shadow: 0 0 0 1.5px #8d92aa;
+  z-index: 1;
+}
+.to-leg {
+  --t: #8a62d0;
+  --sd: #4b2c93;
+  --sl: #7a52c4;
+}
+
+/* SMD IC: pin-1 notch, marking bars, pads peeking out */
+.smd {
+  --t: #262a7a;
+  --sd: #0f1150;
+  --sl: #3a2285;
+}
+.smd .notch {
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: #12145a;
+}
+.smd .bar {
+  position: absolute;
+  height: 3px;
+  background: #5a64c4;
+  border-radius: 1px;
+}
+.pad-teal {
+  position: absolute;
+  background: #2b7f95;
+}
+.pad-pink {
+  position: absolute;
+  background: var(--pad);
+}
+
+/* button base: plate on four legs, X screws */
+.bleg {
+  --t: #6b4bb4;
+  --sd: #3a2285;
+  --sl: #6f4fb8;
+}
+.screw {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+}
+.screw svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--lc), transparent 68%);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.glow.on {
+  opacity: 0.5;
+}
+.tab {
+  --t: #9aa0b8;
+  --sd: #6b7088;
+  --sl: #b7bdd2;
+}
+
+/* feed traces */
+.feed .flow {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 5 13;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.feed.active .tr {
+  stroke: color-mix(in srgb, var(--c) 40%, #383f8d);
+}
+.feed.active .flow {
+  opacity: 1;
+  animation: flow 0.9s linear infinite;
+}
+@keyframes flow {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
