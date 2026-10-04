@@ -192,9 +192,18 @@ a {
 .cube #board > .board-svg {
   z-index: 2;
 }
-/* parts on a face take the face's luminance: full on top, dimmer when the face turns to the side */
-.dim .bx-s,
-.dim .bx-top,
+/* parts on a face take the face's luminance: full on top, dimmer when the face turns to the side.
+   A brightness() filter on every part does it, but there are about a thousand of them and filters are
+   expensive here: each repaint then rebuilds the layers of the whole scene. So the plain box faces (one
+   flat colour, lit by their ::after layer) mix their colours with black instead, which gives the same
+   pixels; every part with its own background, shadow or content keeps the filter. */
+.dim {
+  --plain-lum: var(--lum, 1);
+}
+/* all box sides are plain (see .bx-s), except these: */
+.dim .bx-s:is(:has(> *), .to-tab > *, .to-body > *, .mk-mast > *, .mk-jib > *, .sw-sink > *, .sw-ram > *, .sw-img > *),
+/* box tops keep the filter, except the plain tops of the small parts: */
+.dim .bx-top:not(:is(.smdr-cap, .ic-pin, .bleg, .lead, .smdc-body, .to-leg, .phone-key, .rb-sw) > *),
 .dim .led-cap,
 .dim .cyl-body,
 .dim .cyl-top,
@@ -205,7 +214,11 @@ a {
 .dim .ring-top,
 .dim .silo-floor,
 .dim .ai-glass {
+  --plain-lum: 1;
   filter: brightness(var(--lum, 1));
+}
+:is(.smdr-cap, .ic-pin, .bleg, .lead, .smdc-body, .to-leg, .phone-key, .rb-sw) > .bx-top {
+  background: color-mix(in srgb, var(--t) calc(var(--plain-lum, 1) * 100%), #000);
 }
 .fwrap {
   position: absolute;
@@ -406,14 +419,15 @@ a {
   background: var(--t);
   transform-style: preserve-3d;
 }
+/* a side's colours are dimmed by --plain-lum when its face turns away (see .dim) */
 .bx-s {
-  background: var(--sd);
+  background: color-mix(in srgb, var(--sd) calc(var(--plain-lum, 1) * 100%), #000);
 }
 .bx-s::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--sl);
+  background: color-mix(in srgb, var(--sl) calc(var(--plain-lum, 1) * 100%), #000);
   opacity: clamp(0, calc(-1.3 * (var(--lx) * sin(var(--b) - var(--R)) + var(--ly) * cos(var(--b) - var(--R)))), 1);
 }
 .bx-front {

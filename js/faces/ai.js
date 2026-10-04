@@ -412,11 +412,7 @@ function aiFrame(now) {
   for (const below of [true, false]) {
     const keep = h => (below ? h < 0 : h >= 0);
     ctx.save();
-    if (below) {
-      hole();
-      ctx.clip();
-      ctx.globalAlpha = AIST.open ? 1 : 0.7;
-    }
+    if (below) ctx.globalAlpha = AIST.open ? 1 : 0.7;
     ctx.globalCompositeOperation = "lighter";
     // ---- spine: a simple glowing cord (three fine fibres) with a few packets going up
     if (risen > 0.02) {
@@ -558,6 +554,17 @@ function aiFrame(now) {
       ctx.fill();
     }
     ctx.restore();
+    // below the face only the silo opening shows. The canvas holds nothing else yet, so cut this pass to the
+    // opening in one go rather than clipping every draw: Safari is very slow at drawing images through a clip.
+    if (below) {
+      ctx.save();
+      ctx.globalCompositeOperation = "destination-in";
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "#000";
+      hole();
+      ctx.fill();
+      ctx.restore();
+    }
   }
   // ---- orbiting modules (always above the face when shown), sorted around the brain
   const drawLabel = ({ L, q }) => {
