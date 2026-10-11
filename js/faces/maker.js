@@ -4,10 +4,25 @@
    solders a board for each one. Two arms put them on belts that meet at the
    assembly machine, which fits the board inside its section; a tower crane
    stacks the sections on the pad. Once complete, the rocket launches and
-   the next one starts.
+   the next one starts. The printer works through a queue of jobs, so the
+   visitor can take it over and order other models (maker-rabbit.js).
    All coordinates are in the stage frame (the face turned upright).
    ===================================================================== */
-const MK = { open: false, gen: 0, arms: [], belts: [], items: null, n: 1, st: {}, stack: [], fx: [], sparks: [] };
+const MK = {
+  open: false,
+  gen: 0,
+  arms: [],
+  belts: [],
+  items: null,
+  n: 1,
+  st: {},
+  stack: [],
+  fx: [],
+  sparks: [],
+  jobs: [], // what the printer makes next, in order
+  fabJobs: [], // the jobs that need a board, in the same order
+  mode: "auto", // "auto": rockets, one after the other; "play": what the visitor orders
+};
 /* One layout for the whole face (stage frame: the face turned upright; on screen +x runs down-right,
    +y down-left, the far corner (56, 56) is at the top). Printer on the left, PCB fab on the right, each
    with its arm and belt; the belts meet in a V at the assembly machine; the crane and the pad are behind. */
@@ -64,11 +79,12 @@ async function mkUntil(gen, cond) {
   while (mkOK(gen) && !cond()) await new Promise(r => setTimeout(r, 60));
   return mkOK(gen);
 }
-/* where a loose item sits (stage frame); sz < 1 squashes it in height (a print in progress) */
+/* where a loose item sits (stage frame); sz < 1 squashes it in height (a print in progress); it.rot turns it */
 function mkPlace(it, x, y, z, sz = 1) {
   it.at = [x, y, z];
   it.g.style.transform =
     `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,${z.toFixed(1)}px)` +
+    (it.rot ? ` rotateZ(${it.rot}deg)` : "") +
     (sz < 1 ? ` scale3d(1,1,${Math.max(0.01, sz).toFixed(3)})` : "");
 }
 /* a hatch: a pit with two striped doors that swing down into the cube */
@@ -96,6 +112,14 @@ function mkHatch(parent, cx, cy, w, d, z = 0) {
 const mkDoors = (ds, open) =>
   ds.forEach((d, i) => (d.style.transform = `translateZ(${d._z}px)` + (open ? ` rotateY(${i ? -100 : 100}deg)` : "")));
 const mkSt = (r, k) => (MK.st[r] = MK.st[r] || MK_SECS.map(() => ({ s: 0, p: 0, pcb: "" })))[k];
+/* a rocket's three sections go into the printer's queue, and their boards into the PCB fab's */
+function mkQueueRocket(r) {
+  MK_SECS.forEach((S, k) => {
+    const job = { kind: "sec", k, r, pcb: S.pcb, st: mkSt(r, k) };
+    MK.jobs.push(job);
+    MK.fabJobs.push(job);
+  });
+}
 
 function buildMaker() {
   const root = $("#makGroup"),
@@ -213,6 +237,9 @@ function buildMaker() {
   MK.rocket = div("mk-g mk-rocket", st);
   MK.rocket.style.transform = `translate3d(${pdx}px,${pdy}px,${MKL.padH}px)`;
 
+  // ---- the game's pieces (always on the face): the control desk, the pad's generator, the fences
+  mrBuild(st);
+
   // ---- tower crane: mast, slewing jib with trolley, cable and a magnet hook (the jib folds down to retract)
   const J = MKL.jib,
     cr = mkG(st, cx0, cy0, "translateZ(-176px)");
@@ -294,7 +321,7 @@ function buildMaker() {
   box(st, HX - 14, HY - 14, 28, 28, 3, "mk-frame", 8);
   cyl(st, HX, HY, 18, 5, "mk-lens", 11);
 
-  // ---- copper on the face: passives and the hologram's driver
+  // ---- copper on the face: passives, filter capacitors, and the chips the consoles drive the line through
   const MP = PCB.makParts;
   const pads = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   pads.setAttribute("viewBox", "0 0 560 560");
@@ -309,19 +336,12 @@ function buildMaker() {
   root.insertBefore(pads, st);
   MP.res.forEach(r => smdR(root, ...r));
   MP.cer.forEach(r => smdC(root, ...r));
+  MP.elec.forEach(([x, y, d]) => eCap(root, x, y, d));
   MP.ic.forEach(o => {
     const c = box(root, o.x, o.y, o.w, o.h, 4, "ic-body");
     div("ic-dot", c.t);
-    const t = div("", c.t, {
-      position: "absolute",
-      left: "9px",
-      top: "50%",
-      transform: "translateY(-50%)",
-      font: "7px var(--f-label)",
-      color: "#7f88d8",
-      letterSpacing: ".1em",
-    });
-    t.textContent = o.label;
+    // its name, turned to read from the viewer
+    div("mk-ic-name", c.t, { transform: o.rot ? `rotate(${o.rot}deg)` : "" }).textContent = o.label;
     for (let yy = o.y + 8; yy < o.y + o.h - 4; yy += 14) {
       box(root, o.x - 5, yy - 2, 6, 4, 1.5, "ic-pin");
       box(root, o.x + o.w - 1, yy - 2, 6, 4, 1.5, "ic-pin");
@@ -503,7 +523,7 @@ function mkSetPose(q) {
   const p = MK.onBed;
   if (p) mkPlace(p, MKL.printer[0], MKL.printer[1] + q.y, 16, p.sz);
 }
-async function mkPrint(gen, part, st) {
+async function mkPrint(gen, part, st, dur = 5400) {
   // glide from the parked / deployed pose to the start of the first layer (no jump)
   const from = MK.pose || { z: 110, x: 0, y: 0 },
     start = { z: 35, x: 0, y: 10 };
@@ -517,7 +537,7 @@ async function mkPrint(gen, part, st) {
   st.s = 1;
   await mkAnim(
     gen,
-    5400,
+    dur,
     t => {
       st.p = t;
       part.sz = t;
@@ -533,20 +553,30 @@ async function mkPrint(gen, part, st) {
     mkSetPose({ z: p0.z + (118 - p0.z) * t, x: p0.x + (-26 - p0.x) * t, y: p0.y + (28 - p0.y) * t }),
   );
 }
-/* sections 0, 1, 2 of each rocket; the next rocket starts once this one is complete on the pad */
+/* the printer's queue, one job after the other */
 async function mkPrinterLoop(gen) {
+  for (;;) {
+    if (!(await mkUntil(gen, () => MK.jobs.length))) return;
+    const job = MK.jobs.shift(),
+      part = job.kind === "sec" ? mkSection(job.k) : mrMakePart(job);
+    part.r = job.r;
+    part.k = job.k;
+    part.kind = job.kind;
+    part.job = job;
+    job.it = part;
+    part.sz = 0.01;
+    MK.onBed = part;
+    mkSetPose(MK.pose || { z: 110, x: 0, y: 0 });
+    await mkPrint(gen, part, job.st, job.dur);
+    if (!mkOK(gen)) return;
+    MK.printed = part;
+    if (!(await mkUntil(gen, () => MK.printed !== part))) return; // the arm has lifted it off the bed
+  }
+}
+/* rockets on their own: the next one is queued once the last one is complete on the pad */
+async function mkAutoLoop(gen) {
   for (let r = MK.n; ; r++) {
-    for (let k = 0; k < 3; k++) {
-      const part = mkSection(k);
-      part.r = r;
-      part.sz = 0.01;
-      MK.onBed = part;
-      mkSetPose(MK.pose || { z: 110, x: 0, y: 0 });
-      await mkPrint(gen, part, mkSt(r, k));
-      if (!mkOK(gen)) return;
-      MK.printed = part;
-      if (!(await mkUntil(gen, () => MK.printed !== part))) return; // the arm has lifted it off the bed
-    }
+    mkQueueRocket(r);
     if (!(await mkUntil(gen, () => MK.done >= r))) return;
     if (reduce) return;
   }
@@ -627,80 +657,80 @@ function mkBoard() {
   });
   return { g, h: 4.6, etch, parts, led: parts[4].el };
 }
+/* a board for each job that needs one, in the queue's order */
 async function mkFabLoop(gen) {
-  for (let r = MK.n; ; r++) {
-    for (let k = 0; k < 3; k++) {
-      const st = mkSt(r, k);
-      st.pcb = "LOAD";
-      mkLcd("LOAD");
-      await mkFabMove(gen, { y: -14, x: 0, d: 0 }, 350);
+  for (;;) {
+    if (!MK.fabJobs.length) mkLcd("IDLE");
+    if (!(await mkUntil(gen, () => MK.fabJobs.length))) return;
+    const job = MK.fabJobs.shift(),
+      st = job.st;
+    st.pcb = "LOAD";
+    mkLcd("LOAD");
+    await mkFabMove(gen, { y: -14, x: 0, d: 0 }, 350);
+    if (!mkOK(gen)) return;
+    const bd = mkBoard();
+    bd.r = job.r;
+    bd.job = job;
+    await mkAnim(gen, 400, t => (bd.g.style.transform = `translate3d(0,${(-26 + 26 * t).toFixed(1)}px,18px)`), eout); // out of the magazine
+    // etch: the bed steps under a scanning laser, the copper appears line by line
+    st.pcb = "ETCH";
+    mkLcd("ETCH");
+    MK.fabTool = "laser";
+    await mkFabMove(gen, { y: -12, x: -16 }, 300);
+    await mkAnim(
+      gen,
+      1200,
+      t => {
+        mkFabPose({ x: -16 * Math.cos(t * Math.PI * 9), y: -12 + 24 * t, d: 0 });
+        bd.etch.forEach(
+          (e, i) => (e.style.strokeDashoffset = Math.max(0, Math.min(1, 1 - (t * bd.etch.length - i))).toFixed(3)),
+        );
+      },
+      t => t,
+    );
+    MK.fabTool = null;
+    if (!mkOK(gen)) return;
+    // place: the head drops each part on its pads
+    st.pcb = "PLACE";
+    mkLcd("PLACE");
+    for (const p of bd.parts) {
+      await mkFabMove(gen, { x: p.x, y: -p.y }, 180);
       if (!mkOK(gen)) return;
-      const bd = mkBoard();
-      bd.r = r;
-      await mkAnim(gen, 400, t => (bd.g.style.transform = `translate3d(0,${(-26 + 26 * t).toFixed(1)}px,18px)`), eout); // out of the magazine
-      // etch: the bed steps under a scanning laser, the copper appears line by line
-      st.pcb = "ETCH";
-      mkLcd("ETCH");
-      MK.fabTool = "laser";
-      await mkFabMove(gen, { y: -12, x: -16 }, 300);
+      await mkFabMove(gen, { d: 4 }, 80);
+      p.el.style.opacity = 1;
       await mkAnim(
         gen,
-        1200,
-        t => {
-          mkFabPose({ x: -16 * Math.cos(t * Math.PI * 9), y: -12 + 24 * t, d: 0 });
-          bd.etch.forEach(
-            (e, i) => (e.style.strokeDashoffset = Math.max(0, Math.min(1, 1 - (t * bd.etch.length - i))).toFixed(3)),
-          );
-        },
-        t => t,
+        140,
+        t =>
+          (p.el.style.transform = `translateZ(${(6 * (1 - t)).toFixed(1)}px) scale3d(${(0.4 + 0.6 * t).toFixed(3)},${(0.4 + 0.6 * t).toFixed(3)},${(0.4 + 0.6 * t).toFixed(3)})`),
+        eout,
       );
-      MK.fabTool = null;
-      if (!mkOK(gen)) return;
-      // place: the head drops each part on its pads
-      st.pcb = "PLACE";
-      mkLcd("PLACE");
-      for (const p of bd.parts) {
-        await mkFabMove(gen, { x: p.x, y: -p.y }, 180);
-        if (!mkOK(gen)) return;
-        await mkFabMove(gen, { d: 4 }, 80);
-        p.el.style.opacity = 1;
-        await mkAnim(
-          gen,
-          140,
-          t =>
-            (p.el.style.transform = `translateZ(${(6 * (1 - t)).toFixed(1)}px) scale3d(${(0.4 + 0.6 * t).toFixed(3)},${(0.4 + 0.6 * t).toFixed(3)},${(0.4 + 0.6 * t).toFixed(3)})`),
-          eout,
-        );
-        await mkFabMove(gen, { d: 0 }, 80);
-      }
-      // solder: the iron touches every part, sparks fly
-      st.pcb = "SOLDER";
-      mkLcd("SOLDER");
-      const [chip, r1, , c1] = bd.parts;
-      for (const [x, y] of [
-        [chip.x - chip.w / 2 + 1, chip.y],
-        [chip.x + chip.w / 2 - 1, chip.y],
-        [c1.x, (r1.y + c1.y) / 2],
-      ]) {
-        await mkFabMove(gen, { x, y: -y }, 180);
-        if (!mkOK(gen)) return;
-        await mkFabMove(gen, { d: 6 }, 80);
-        MK.fabTool = "iron";
-        await mkWait(gen, 260);
-        MK.fabTool = null;
-        await mkFabMove(gen, { d: 0 }, 80);
-      }
-      bd.led.classList.add("on");
-      st.pcb = "READY";
-      mkLcd("READY");
-      await mkFabMove(gen, { x: 0, y: 30, d: 0 }, 500);
-      if (!mkOK(gen)) return;
-      MK.boardOut = bd;
-      if (!(await mkUntil(gen, () => MK.boardOut !== bd))) return; // the arm has lifted it off the bed
+      await mkFabMove(gen, { d: 0 }, 80);
     }
-    mkLcd("IDLE");
-    if (!(await mkUntil(gen, () => MK.done >= r))) return;
-    if (reduce) return;
+    // solder: the iron touches every part, sparks fly
+    st.pcb = "SOLDER";
+    mkLcd("SOLDER");
+    const [chip, r1, , c1] = bd.parts;
+    for (const [x, y] of [
+      [chip.x - chip.w / 2 + 1, chip.y],
+      [chip.x + chip.w / 2 - 1, chip.y],
+      [c1.x, (r1.y + c1.y) / 2],
+    ]) {
+      await mkFabMove(gen, { x, y: -y }, 180);
+      if (!mkOK(gen)) return;
+      await mkFabMove(gen, { d: 6 }, 80);
+      MK.fabTool = "iron";
+      await mkWait(gen, 260);
+      MK.fabTool = null;
+      await mkFabMove(gen, { d: 0 }, 80);
+    }
+    bd.led.classList.add("on");
+    st.pcb = "READY";
+    mkLcd("READY");
+    await mkFabMove(gen, { x: 0, y: 30, d: 0 }, 500);
+    if (!mkOK(gen)) return;
+    MK.boardOut = bd;
+    if (!(await mkUntil(gen, () => MK.boardOut !== bd))) return; // the arm has lifted it off the bed
   }
 }
 
@@ -710,6 +740,7 @@ async function mkArmLoop(gen, arm, belt, ready, srcOf, take) {
     if (!(await mkUntil(gen, () => ready() && !belt.busy))) return;
     const it = ready();
     belt.busy = true;
+    if (it.kind === "carrot") mrFences(true); // it rides fenced in: nobody gets it before it is on the machine
     const drop = belt.axis === "y" ? [belt.at, belt.from, 10] : [belt.from, belt.at, 10];
     if (
       !(await mkArmTransfer(
@@ -761,15 +792,18 @@ async function mkRide(gen, b, it) {
   b.busy = false;
 }
 /* the section and its board leave together (same belt length, same speed): they reach their doors at the
-   same moment and the assembly starts straight away. The first one ready waits at the start of its belt. */
+   same moment and the assembly starts straight away. The first one ready waits at the start of its belt.
+   A part without a board (a block, a carrot) goes on its own. */
 async function mkPairLoop(gen) {
   const [b1, b2] = MK.belts;
   for (;;) {
-    if (!(await mkUntil(gen, () => b1.wait && b2.wait && !MK.asm.part && !MK.asm.pcb))) return;
+    if (!(await mkUntil(gen, () => b1.wait && (b2.wait || !b1.wait.job.pcb) && !MK.asm.part && !MK.asm.pcb))) return;
     const p1 = b1.wait,
-      p2 = b2.wait;
-    b1.wait = b2.wait = null;
-    await Promise.all([mkRide(gen, b1, p1), mkRide(gen, b2, p2)]);
+      p2 = p1.job.pcb ? b2.wait : null;
+    b1.wait = null;
+    if (p2) b2.wait = null;
+    await Promise.all([mkRide(gen, b1, p1), p2 && mkRide(gen, b2, p2)]);
+    if (p1.kind === "carrot" && mkOK(gen)) mrFences(false); // it is inside the machine: the fences go back down
   }
 }
 
@@ -777,19 +811,34 @@ async function mkPairLoop(gen) {
 async function mkAsmLoop(gen) {
   const [ax, ay] = MKL.asm,
     H = MKL.asmH;
+  const ready = () => MK.asm.part && (MK.asm.pcb || !MK.asm.part.job.pcb);
+  // the lift doesn't move while the rabbit (once it is alive) stands on the trap
+  const clear = say => {
+    if (say && mrOnHatch()) mrSay("THE RABBIT IS SITTING ON THE TRAP");
+    return mkUntil(gen, () => !mrOnHatch());
+  };
+  const lower = async () => {
+    if (!(await clear(false))) return false;
+    await mkAnim(gen, 450, t => (MK.lift.style.transform = `translateZ(${(H - 3 - 37 * t).toFixed(1)}px)`));
+    mkDoors(MK.asmDoors, false);
+    return mkOK(gen);
+  };
   for (;;) {
-    if (!(await mkUntil(gen, () => MK.asm.part && MK.asm.pcb && !MK.asm.out))) return;
+    if (!(await mkUntil(gen, () => ready() && !MK.asm.out))) return;
     const part = MK.asm.part,
       pcb = MK.asm.pcb;
     MK.asmGear.classList.add("spin");
-    await mkWait(gen, 1300);
+    await mkWait(gen, pcb ? 1300 : 700);
     if (!mkOK(gen)) return;
-    pcb.g.remove();
-    mkFitted(part);
-    mkSt(part.r, part.k).s = 3;
-    mkSt(part.r, part.k).pcb = "IN";
+    if (pcb) {
+      pcb.g.remove();
+      mkFitted(part);
+      part.job.st.pcb = "IN";
+    }
+    part.job.st.s = 3;
     MK.asmGear.classList.remove("spin");
     Object.values(MK.lamps).forEach(l => l.classList.remove("on"));
+    if (!(await clear(true))) return;
     mkDoors(MK.asmDoors, true);
     await mkWait(gen, 380);
     const z0 = H - part.h - 6;
@@ -808,10 +857,28 @@ async function mkAsmLoop(gen) {
     );
     if (!mkOK(gen)) return;
     MK.asm.out = part;
-    if (!(await mkUntil(gen, () => MK.asm.out !== part))) return; // the crane has it
+    if (part.kind === "carrot") {
+      // the crane can't lift it off: it waits on the lift to be eaten, or for the next part to need the lift
+      MR.carrot = part;
+      if (!(await mkUntil(gen, () => MK.asm.out !== part || (part.stuck && ready() && !mrOnHatch())))) return;
+      if (MK.asm.out === part) {
+        // the lift goes down for the next part and takes the carrot with it, into the machine
+        MK.asm.out = null;
+        mrCarrotLost(part);
+        await mkAnim(gen, 450, t => {
+          const z = H - 3 - 37 * t;
+          MK.lift.style.transform = `translateZ(${z.toFixed(1)}px)`;
+          mkPlace(part, ax, ay, z + 3.3);
+        });
+        mkDoors(MK.asmDoors, false);
+        await mkWait(gen, 450);
+        part.g.remove();
+        if (!mkOK(gen)) return;
+        continue;
+      }
+    } else if (!(await mkUntil(gen, () => MK.asm.out !== part))) return; // the crane has it
     await mkWait(gen, 300);
-    await mkAnim(gen, 450, t => (MK.lift.style.transform = `translateZ(${(H - 3 - 37 * t).toFixed(1)}px)`));
-    mkDoors(MK.asmDoors, false);
+    if (!(await lower())) return;
   }
 }
 
@@ -862,16 +929,33 @@ async function mkCraneLoop(gen) {
     [pdx, pdy] = MKL.pad,
     H = MKL.asmH,
     CZ = MKL.carry;
+  const fresh = () => MK.asm.out && !MK.asm.out.stuck;
   for (;;) {
-    if (!(await mkUntil(gen, () => MK.asm.out))) return;
+    if (!(await mkUntil(gen, () => fresh() || MR.req))) return;
+    if (!fresh()) {
+      // the visitor wants a block moved
+      if (!(await mrRepick(gen))) return;
+      continue;
+    }
     const it = MK.asm.out;
     await mkCraneGo(gen, ax, ay, CZ, 1300);
     await mkHook(gen, H + 0.3 + it.h, 650);
     if (!mkOK(gen)) return;
+    if (it.kind === "carrot") {
+      // the magnet finds nothing to hold on to: the carrot stays where it is
+      if (!(await mrCarrotTry(gen, it))) return;
+      continue;
+    }
     MK.cr.hold = it;
     MK.asm.out = null;
     mkCraneSet(MK.cr.th, MK.cr.r, MK.cr.z);
     await mkHook(gen, CZ, 600);
+    if (it.kind === "blk") {
+      // a block goes wherever the visitor clicks
+      if (!(await mrPlace(gen, it))) return;
+      continue;
+    }
+    // a section of the rocket, or a part of the rabbit: it goes on the pad
     const top = MKL.padH + MK.stack.reduce((a, s) => a + s.h, 0);
     await mkCraneGo(gen, pdx, pdy, CZ, 1300);
     await mkHook(gen, top + it.h, 800);
@@ -885,12 +969,20 @@ async function mkCraneLoop(gen) {
       it.bots.forEach(t => (t.style.visibility = "hidden"));
     }
     MK.stack.push(it);
-    mkSt(it.r, it.k).s = 4;
+    it.job.st.s = 4;
     await mkHook(gen, CZ, 500);
+    if (it.kind === "rb") {
+      if (MK.stack.length === MR_RB.length) {
+        await mkCraneGo(gen, MKL.crane[0] + 40, MKL.crane[1] - 26, MKL.jib - 20, 1100); // out of its way
+        if (!mkOK(gen)) return;
+        mrBoot(gen);
+      }
+      continue;
+    }
     if (MK.stack.length === MK_SECS.length) {
       MK.done = it.r;
       await mkCraneGo(gen, MKL.crane[0] + 40, MKL.crane[1] - 26, MKL.jib - 20, 1100); // swing clear of the rocket
-      if (reduce) return;
+      if (reduce && MK.mode === "auto") return;
       await mkLaunch(gen, it.r);
       if (!mkOK(gen)) return;
     }
@@ -939,6 +1031,7 @@ async function mkLaunch(gen, r) {
   mkRocketZ(0);
   delete MK.st[r];
   MK.n = r + 1;
+  if (MR.pad === "rocket") MR.pad = null; // a rocket ordered by the visitor has left: the pad is free again
   MK.count = null;
   MK.launchR = 0;
   await mkWait(gen, 500);
@@ -960,7 +1053,12 @@ async function makOpen() {
     count: null,
     launchR: 0,
     fabTool: null,
+    jobs: [],
+    fabJobs: [],
+    mode: "auto",
+    ready: false, // the MODEL and PRINT buttons take orders once everything is deployed
   });
+  mrReset();
   MK.belts.forEach(b => {
     b.busy = false;
     b.wait = null;
@@ -1011,6 +1109,12 @@ async function makOpen() {
   await Promise.all([printer, fab, crane]);
   if (!mkOK(gen)) return;
   holoFade(1, 900);
+  MK.ready = true;
+  mkAutoLoop(gen);
+  mkLoops(gen);
+}
+/* every machine's own loop: they hand the parts on to each other */
+function mkLoops(gen) {
   const [a1, a2] = MK.arms,
     [b1, b2] = MK.belts,
     [px0, py0] = MKL.printer,
@@ -1051,38 +1155,11 @@ async function makOpen() {
 function makClose() {
   if (!MK.open) return Promise.resolve();
   MK.open = false;
+  MK.ready = false;
   const gen = ++MK.gen;
   holoFade(0, 450);
-  const leftovers = [
-    ...MK.items.children,
-    ...MK.rocket.children,
-    ...[...MK.fbed.children].filter(n => !n.classList.contains("box")),
-  ];
-  leftovers.forEach(n => {
-    n.style.transition = "opacity .3s";
-    n.style.opacity = 0;
-  });
-  setTimeout(() => leftovers.forEach(n => n.remove()), 330);
-  MK.onBed = MK.printed = MK.boardOut = null;
-  MK.stack = [];
-  MK.st = {};
-  MK.burn = 0;
-  MK.count = null;
-  MK.fabTool = null;
-  MK.cr.hold = null;
-  MK.fx.length = MK.sparks.length = 0;
-  MK.arms.forEach(arm => {
-    arm.hold = null;
-    mkGrip(arm, false);
-  });
-  MK.belts.forEach(b => {
-    b.run(false);
-    b.wait = null;
-  });
-  Object.values(MK.shutters).forEach(e => e.classList.remove("open"));
-  Object.values(MK.lamps).forEach(l => l.classList.remove("on"));
-  MK.asmGear.classList.remove("spin");
-  MK.padLights.forEach(l => l.classList.remove("on"));
+  mkRecycle();
+  mrReset();
   const home = { z: 110, x: 0, y: 0 },
     from = MK.pose || home,
     f0 = { ...MK.fpose },
@@ -1134,6 +1211,70 @@ function makClose() {
   });
   return phase1;
 }
+/* whatever the factory was making fades away; the machines stay where they are */
+function mkRecycle() {
+  const leftovers = [
+    ...MK.items.children,
+    ...MK.rocket.children,
+    ...[...MK.fbed.children].filter(n => !n.classList.contains("box")),
+  ];
+  leftovers.forEach(n => {
+    n.style.transition = "opacity .3s";
+    n.style.opacity = 0;
+  });
+  setTimeout(() => leftovers.forEach(n => n.remove()), 330);
+  Object.assign(MK, {
+    asm: { part: null, pcb: null, out: null },
+    onBed: null,
+    printed: null,
+    boardOut: null,
+    stack: [],
+    st: {},
+    jobs: [],
+    fabJobs: [],
+    burn: 0,
+    count: null,
+    launchR: 0,
+    done: MK.n - 1,
+    fabTool: null,
+  });
+  MK.cr.hold = null;
+  MK.fx.length = MK.sparks.length = 0;
+  MK.arms.forEach(arm => {
+    arm.hold = null;
+    mkGrip(arm, false);
+  });
+  MK.belts.forEach(b => {
+    b.run(false);
+    b.wait = null;
+    b.busy = false;
+  });
+  Object.values(MK.shutters).forEach(e => e.classList.remove("open"));
+  Object.values(MK.lamps).forEach(l => l.classList.remove("on"));
+  MK.asmGear.classList.remove("spin");
+  MK.padLights.forEach(l => l.classList.remove("on"));
+}
+/* the visitor takes the printer over: the rocket line stops (what it had going is recycled), the machines go
+   back to their places, and from now on the factory makes what it is asked for */
+async function mkPlay() {
+  if (MK.mode === "play") return;
+  MK.mode = "play";
+  const gen = ++MK.gen,
+    C = MK.cr,
+    c0 = [C.th, C.r, C.z];
+  mkRecycle();
+  mkRocketZ(0);
+  MK.lift.style.transform = `translateZ(${MKL.asmH - 40}px)`;
+  mkDoors(MK.asmDoors, false);
+  await Promise.all([
+    ...MK.arms.map(arm => mkArmMove(gen, arm, arm.rest, 650)),
+    mkFabMove(gen, { x: 0, y: -14, d: 0 }, 450),
+    mkAnim(gen, 650, t =>
+      mkCraneSet(c0[0] + (-0.6 - c0[0]) * t, c0[1] + (40 - c0[1]) * t, c0[2] + (MKL.jib - 20 - c0[2]) * t),
+    ),
+  ]);
+  if (mkOK(gen)) mkLoops(gen);
+}
 
 /* ---------------- overlays: the hologram, and the factory's light (laser, sparks, flame, smoke) ---------------- */
 /* stage point → screen (world) coordinates: stage turned 270° and scaled ×1.25 on the back face */
@@ -1176,9 +1317,11 @@ function holoTick(now) {
     return;
   }
   MK.holoRAF = requestAnimationFrame(holoTick);
+  if (MR.rb && MK.open) mrTick(dt); // the rabbit, once it is alive
   const M = qMat(Q),
     vis = rx(ry(mv(M, [0, 0, -1]), YAW), ISO)[2] > 0.02;
   if (!vis || (ROLL.active && !ROLL.keep.has("back"))) return;
+  if (MK.open) mrDeskTick(); // the control desk's lamps follow the line
   oc.setTransform(dpr, 0, 0, dpr, -150 * dpr, 0);
   mkDrawFx(oc, M, t, dt);
   const fade = Math.min(1, MK.holoOn || 0);
@@ -1330,24 +1473,30 @@ function mkDrawFx(ctx, M, t, dt) {
     ctx.fill();
     ctx.globalCompositeOperation = "source-over";
   }
+  if (MR.zap || MR.coilZ) mrDrawZap(ctx, P, t); // the rabbit taking power
 }
-/* the rocket's blueprint: one wireframe per section, lit by how far it has got */
+/* the blueprint of the model on the printer's display (the rocket's, unless the visitor picked another one):
+   one wireframe per section, lit by how far it has got */
 function mkDrawHolo(ctx, M, t, fade) {
   const [HX, HY] = MKL.holo,
-    base = mkProject(M, HX, HY, 16);
+    base = mkProject(M, HX, HY, 16),
+    now = performance.now();
   MK.holoCv.style.transform = `translate(${(base[0] - 150).toFixed(1)}px,${(base[1] - 230).toFixed(1)}px)`;
   ctx.translate(150 - base[0], 230 - base[1]);
-  const r = MK.launchR || (MK.stack.length === MK_SECS.length ? MK.done : MK.done + 1),
-    sts = MK_SECS.map((_, k) => mkSt(r, k)); // a finished rocket stays on show until it leaves
+  const rocket = MR_MODELS[MR.sel].id === "rocket",
+    r = MK.launchR || (MK.stack.length === MK_SECS.length ? MK.done : MK.done + 1),
+    sts = rocket ? MK_SECS.map((_, k) => mkSt(r, k)) : []; // a finished rocket stays on show until it leaves
   const grow = fade,
     S = 0.95 * (0.25 + 0.75 * grow),
     z0 = 20 + 18 * grow,
     yaw = t * 0.6,
     cy = Math.cos(yaw),
     sy = Math.sin(yaw);
-  const glitch = fade < 1 ? (Math.random() < 0.35 ? 0.3 + Math.random() * 0.7 : 1) : 1,
+  const switching = now - MR.switchT < 260, // it glitches over to another model
+    glitch = fade < 1 || switching ? (Math.random() < 0.35 ? 0.3 + Math.random() * 0.7 : 1) : 1,
     flick = (0.82 + 0.18 * Math.sin(t * 37) * Math.sin(t * 11)) * glitch;
-  const P = (x, y, z) => mkProject(M, HX + S * (x * cy - y * sy), HY + S * (x * sy + y * cy), z0 + S * z);
+  const PS = s => (x, y, z) => mkProject(M, HX + s * (x * cy - y * sy), HY + s * (x * sy + y * cy), z0 + s * z),
+    P = PS(S);
   ctx.globalAlpha = fade * flick;
   ctx.globalCompositeOperation = "lighter";
   // projection cone
@@ -1384,89 +1533,106 @@ function mkDrawHolo(ctx, M, t, fade) {
     LIT = "rgba(127,243,255,.95)",
     DONE = "rgba(220,252,255,1)",
     PCBC = "rgba(255,143,217,.95)";
-  let zb = 0;
-  MK_SECS.forEach((S0, k) => {
-    const s = sts[k],
-      z1 = zb + S0.h,
-      cut = s.s === 1 ? zb + s.p * S0.h : s.s >= 2 ? z1 : zb;
-    const col = z => (s.s >= 4 ? DONE : z <= cut + 0.01 ? LIT : DIM);
-    const silhouette = (rad0, rad1, za, zc) =>
-      [0, 1, 2, 3].forEach(i => {
-        const a = (i * Math.PI) / 2 + Math.PI / 4;
-        line([P(rad0 * Math.cos(a), rad0 * Math.sin(a), za), P(rad1 * Math.cos(a), rad1 * Math.sin(a), zc)], col(zc));
-      });
-    if (k === 0) {
-      ring(6, zb, col(zb));
-      ring(13, zb + 6, col(zb + 6));
-      ring(13, z1, col(z1));
-      silhouette(13, 13, zb + 6, z1);
-      [0, 1, 2, 3].forEach(i => {
-        const a = (i * Math.PI) / 2,
-          c = Math.cos(a),
-          sn = Math.sin(a);
-        line(
-          [
-            P(11 * c, 11 * sn, zb),
-            P(21 * c, 21 * sn, zb),
-            P(21 * c, 21 * sn, zb + 15),
-            P(16 * c, 16 * sn, zb + 22),
-            P(11 * c, 11 * sn, zb + 22),
-          ],
-          col(zb + 15),
-        );
-      });
-    } else if (k === 1) {
-      ring(13, zb, col(zb));
-      ring(13, zb + 15, col(zb + 15));
-      ring(13, z1, col(z1));
-      silhouette(13, 13, zb, z1);
-    } else {
-      ring(13, zb, col(zb));
-      ring(13, zb + 8, col(zb + 8));
-      ring(8, zb + 20, col(zb + 20));
-      silhouette(13, 13, zb, zb + 8);
-      silhouette(13, 0, zb + 8, z1);
-    }
-    if (s.s === 1)
-      ring(k === 2 && cut > zb + 8 ? 13 * (1 - (cut - zb - 8) / 24) : 13, cut, "rgba(255,181,71,.95)", 1.6);
-    if (s.s >= 3) ring(14.5, zb + (k === 0 ? 21 : k === 1 ? 9 : 4), PCBC, 1.6);
-    zb = z1;
-  });
-  // labels
-  const tl = P(0, 0, 104);
+  let title, l1, l2;
+  if (rocket) {
+    let zb = 0;
+    MK_SECS.forEach((S0, k) => {
+      const s = sts[k],
+        z1 = zb + S0.h,
+        cut = s.s === 1 ? zb + s.p * S0.h : s.s >= 2 ? z1 : zb;
+      const col = z => (s.s >= 4 ? DONE : z <= cut + 0.01 ? LIT : DIM);
+      const silhouette = (rad0, rad1, za, zc) =>
+        [0, 1, 2, 3].forEach(i => {
+          const a = (i * Math.PI) / 2 + Math.PI / 4;
+          line([P(rad0 * Math.cos(a), rad0 * Math.sin(a), za), P(rad1 * Math.cos(a), rad1 * Math.sin(a), zc)], col(zc));
+        });
+      if (k === 0) {
+        ring(6, zb, col(zb));
+        ring(13, zb + 6, col(zb + 6));
+        ring(13, z1, col(z1));
+        silhouette(13, 13, zb + 6, z1);
+        [0, 1, 2, 3].forEach(i => {
+          const a = (i * Math.PI) / 2,
+            c = Math.cos(a),
+            sn = Math.sin(a);
+          line(
+            [
+              P(11 * c, 11 * sn, zb),
+              P(21 * c, 21 * sn, zb),
+              P(21 * c, 21 * sn, zb + 15),
+              P(16 * c, 16 * sn, zb + 22),
+              P(11 * c, 11 * sn, zb + 22),
+            ],
+            col(zb + 15),
+          );
+        });
+      } else if (k === 1) {
+        ring(13, zb, col(zb));
+        ring(13, zb + 15, col(zb + 15));
+        ring(13, z1, col(z1));
+        silhouette(13, 13, zb, z1);
+      } else {
+        ring(13, zb, col(zb));
+        ring(13, zb + 8, col(zb + 8));
+        ring(8, zb + 20, col(zb + 20));
+        silhouette(13, 13, zb, zb + 8);
+        silhouette(13, 0, zb + 8, z1);
+      }
+      if (s.s === 1)
+        ring(k === 2 && cut > zb + 8 ? 13 * (1 - (cut - zb - 8) / 24) : 13, cut, "rgba(255,181,71,.95)", 1.6);
+      if (s.s >= 3) ring(14.5, zb + (k === 0 ? 21 : k === 1 ? 9 : 4), PCBC, 1.6);
+      zb = z1;
+    });
+    const busy = sts.findIndex(s => s.s === 1),
+      pk = sts.findIndex(s => s.pcb && s.pcb !== "IN" && s.pcb !== "READY");
+    title = `ROCKET ${String(r).padStart(2, "0")}`;
+    l1 =
+      MK.count != null
+        ? MK.count
+          ? `T-${MK.count}`
+          : "LIFTOFF"
+        : busy >= 0
+          ? `PRINT ${MK_SECS[busy].id} ${Math.round(sts[busy].p * 100)}%`
+          : sts.every(s => s.s >= 4)
+            ? "READY"
+            : MK.mode === "play" && MR.pad !== "rocket"
+              ? "PRESS PRINT"
+              : "ASSEMBLY";
+    l2 = MK.count != null ? "" : pk >= 0 ? `PCB ${MK_SECS[pk].pcb} · ${sts[pk].pcb}` : "";
+  } else ({ title, l1, l2 } = mrHolo(ctx, { PS, line, t }));
+  // labels, and a line for news
+  const tl = P(0, 0, 104),
+    msg =
+      MR.msg && now < MR.msg.until
+        ? MR.msg
+        : MR.placing
+          ? { txt: "CLICK THE BOARD TO SET IT DOWN", tone: "teal" }
+          : null;
   ctx.globalCompositeOperation = "source-over";
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(127,243,255,.95)";
   ctx.font = "9px 'Share Tech Mono', monospace";
-  ctx.fillText(`ROCKET ${String(r).padStart(2, "0")}`, tl[0], tl[1] - 22);
-  const busy = sts.findIndex(s => s.s === 1),
-    pk = sts.findIndex(s => s.pcb && s.pcb !== "IN" && s.pcb !== "READY");
-  const l1 =
-    MK.count != null
-      ? MK.count
-        ? `T-${MK.count}`
-        : "LIFTOFF"
-      : busy >= 0
-        ? `PRINT ${MK_SECS[busy].id} ${Math.round(sts[busy].p * 100)}%`
-        : sts.every(s => s.s >= 4)
-          ? "READY"
-          : "ASSEMBLY";
-  const l2 = MK.count != null ? "" : pk >= 0 ? `PCB ${MK_SECS[pk].pcb} · ${sts[pk].pcb}` : "";
-  ctx.font = (MK.count != null ? "13px" : "8px") + " 'Share Tech Mono', monospace";
-  ctx.fillStyle = MK.count != null ? "#ffd6f4" : "rgba(127,243,255,.85)";
+  ctx.fillText(title, tl[0], tl[1] - 22);
+  ctx.font = (MK.count != null && rocket ? "13px" : "8px") + " 'Share Tech Mono', monospace";
+  ctx.fillStyle = MK.count != null && rocket ? "#ffd6f4" : "rgba(127,243,255,.85)";
   ctx.fillText(l1, tl[0], tl[1] - 10);
   if (l2) {
     ctx.font = "8px 'Share Tech Mono', monospace";
     ctx.fillStyle = "rgba(255,179,239,.85)";
     ctx.fillText(l2, tl[0], tl[1]);
   }
+  if (msg) {
+    ctx.font = "8px 'Share Tech Mono', monospace";
+    ctx.fillStyle = msg.tone === "teal" ? "rgba(127,243,255,.95)" : "rgba(255,179,239,.95)";
+    ctx.fillText(msg.txt, tl[0], tl[1] + (l2 ? 11 : 0));
+  }
   ctx.textAlign = "start";
   ctx.globalAlpha = fade * 0.12;
   ctx.fillStyle = "#7ff3ff";
   for (let yy = -120 + ((t * 40) % 6); yy < 10; yy += 6) ctx.fillRect(base[0] - 60, base[1] + yy, 120, 1);
-  if (fade < 1) {
-    // boot / shutdown glitch bands
-    ctx.globalAlpha = (1 - fade) * 0.8;
+  if (fade < 1 || switching) {
+    // boot / shutdown / switch glitch bands
+    ctx.globalAlpha = fade < 1 ? (1 - fade) * 0.8 : 0.5;
     ctx.globalCompositeOperation = "lighter";
     for (let k = 0; k < 3; k++) {
       const yy = base[1] - Math.random() * 110 * grow,

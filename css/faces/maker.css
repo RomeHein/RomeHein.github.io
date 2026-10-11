@@ -542,3 +542,659 @@
   --sd: #3e5fb8;
   --sl: #b0c6ff;
 }
+
+/* ---------------- the mechanical rabbit (maker-rabbit.js) ---------------- */
+/* the control desk: two consoles, each a sloping instrument panel over a flat ledge (the rabbit's has a shelf for
+   the nixie tubes) */
+.mr-desk {
+  --t: #20246a;
+  --sd: #14165a;
+  --sl: #33307f;
+}
+.mr-desk > .mr-slope {
+  background: linear-gradient(180deg, #343b92 0%, #2b3184 100%);
+  box-shadow:
+    inset 0 0 0 0.8px #555cc0,
+    inset 0 0 0 2px #1d2160;
+}
+.mr-desk > .mr-ledge {
+  background: #1b1e5c;
+  box-shadow:
+    inset 0 -1.4px 0 #ffb547aa,
+    inset 0 0 0 0.6px #3c41a0;
+}
+.mr-shelf > .bx-top {
+  background: #23276e;
+  box-shadow:
+    inset 0 -1.4px 0 #ffb547aa,
+    inset 0 0 0 0.8px #3c41a0;
+}
+/* the consoles' names, printed like the machines' (.sw-name, see nameOnFace), and the lamps' legends */
+.mr-label {
+  position: absolute;
+}
+.mr-legend {
+  position: absolute;
+  color: #9ea6ec;
+  font: 600 5px/6px var(--f-body);
+  letter-spacing: 0.08em;
+  text-align: center;
+  white-space: nowrap;
+}
+/* pilot lamps: a coloured lens, dark until it lights */
+.mr-pilot {
+  --lc: #ffb547;
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--lc) 35%, #2a2440), #120f26 75%);
+  box-shadow:
+    0 0 0 0.8px #0a0b28,
+    0 0 0 1.5px #6a6f9e;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.mr-pilot.green {
+  --lc: #63e6be;
+}
+.mr-pilot.on {
+  background: radial-gradient(circle at 40% 35%, #fff, var(--lc) 45%, color-mix(in srgb, var(--lc) 60%, #000) 100%);
+  box-shadow:
+    0 0 0 0.8px #0a0b28,
+    0 0 0 1.5px #6a6f9e,
+    0 0 7px 1px var(--lc);
+}
+/* the printer's display (a VFD: glowing teal letters behind dark glass) and the print's progress bar */
+.mr-vfd {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 1px;
+  background: #061418;
+  box-shadow:
+    inset 0 0 4px #000,
+    0 0 0 0.8px #0a0b28,
+    0 0 0 1.6px #6a6f9e;
+  color: #7ff3ff;
+  text-shadow: 0 0 3px rgba(127, 243, 255, 0.85);
+  white-space: nowrap;
+}
+.mr-bar {
+  position: absolute;
+  border-radius: 0.5px;
+  background: #0a0b28;
+  box-shadow: 0 0 0 0.6px #6a6f9e;
+  overflow: hidden;
+}
+.mr-bar > div {
+  height: 100%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, #ffb547 0 3.4px, transparent 3.4px 4.4px);
+  filter: drop-shadow(0 0 1.5px #ffb547);
+}
+/* the copper from the desk to a machine lights up while that machine is at work */
+.face-svg .fx-tr.mr-on {
+  stroke: rgba(127, 243, 255, 0.42);
+}
+/* the chips' names, turned to read from the viewer */
+.mk-ic-name {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #7f88d8;
+  font: 7px var(--f-label);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+/* the generator by the pad: a hazard-striped plinth, a dynamo (ribbed body, end bells, a flywheel), copper bus bars
+   to its coil (below) */
+.mr-gen-base,
+.mr-gen-foot {
+  --t: #1d2050;
+  --sd: #10123a;
+  --sl: #3a2f7a;
+}
+.mr-gen-base > .bx-top {
+  border: 3px solid transparent;
+  background:
+    linear-gradient(#1d2050, #1d2050) padding-box,
+    repeating-linear-gradient(45deg, #ffb547 0 3px, #14163f 3px 6px) border-box;
+}
+.mr-gen-base svg {
+  position: absolute;
+  left: 35px;
+  top: 31px;
+  width: 12px;
+  height: 19px;
+  fill: #ffb547;
+  transition: fill 0.3s;
+}
+.mr-gen.run .mr-gen-base svg {
+  fill: #e9fbff;
+  filter: drop-shadow(0 0 3px #7ff3ff);
+}
+.lc-body.mr-dyn {
+  background:
+    repeating-linear-gradient(90deg, rgba(5, 6, 30, 0.45) 0 1.2px, transparent 1.2px 4px),
+    linear-gradient(180deg, #4d55bd, #2c318a 45%, #171b5c);
+}
+.lc-cap.mr-dyn {
+  background: radial-gradient(circle, #555cc0 0 18%, #262a78 20% 58%, #3b419c 60% 68%, #1d2160 70%);
+  box-shadow: inset 0 0 0 1px #555cc0;
+}
+.lc-body.mr-shaft {
+  background: linear-gradient(180deg, #e0e3f5, #9aa1c8 50%, #555b86);
+}
+.lc-cap.mr-shaft {
+  background: #9aa1c8;
+  box-shadow: none;
+}
+.lc-body.mr-fly {
+  background: linear-gradient(180deg, #ffd08a, #ffb547 40%, #8a5414);
+}
+.lc-cap.mr-fly {
+  background: #241a52;
+  box-shadow:
+    inset 0 0 0 2.2px #ffb547,
+    inset 0 0 0 3px #8a5414;
+}
+.mr-spokes {
+  position: absolute;
+  inset: 2.6px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #ffd08a 0 13%, #8a5414 14% 19%, transparent 20%),
+    repeating-conic-gradient(#ffb547 0 16deg, transparent 16deg 60deg);
+}
+.mr-gen.run .mr-spokes {
+  animation:
+    fanSpin 0.8s ease-in,
+    fanSpin 0.24s linear 0.8s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mr-gen.run .mr-spokes {
+    animation: none;
+  }
+}
+.mr-gen-tb {
+  --t: #262a78;
+  --sd: #13115a;
+  --sl: #4b2a93;
+}
+.mr-busbar {
+  --t: #e0904a;
+  --sd: #9a5420;
+  --sl: #ffb070;
+}
+/* the coil: a foot, copper rings, a steel toroid; a cyan haze while it runs */
+.mr-coilc .foot {
+  fill: #14164a;
+  stroke: #3c41a0;
+  stroke-width: 0.6;
+}
+.mr-coilc .foot-top {
+  fill: #262a72;
+  stroke: #3c41a0;
+  stroke-width: 0.6;
+}
+.mr-coilc .ring {
+  fill: url(#mrcu);
+  stroke: #2a1206;
+  stroke-width: 0.5;
+}
+.mr-coilc .torus {
+  fill: url(#mrsteel);
+  stroke: #3e4370;
+  stroke-width: 0.5;
+}
+.mr-coilc .hole {
+  fill: #0b0c2c;
+}
+.mr-coilc .shine {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.7);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+}
+.mr-coilc .hot {
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.mr-gen.run .mr-coilc .hot {
+  opacity: 1;
+}
+/* …and its rings' edges lit */
+.mr-gen.run .mr-coilc .ring {
+  stroke: #c9fbff;
+  stroke-width: 0.7;
+}
+/* the blackout when the rabbit gets its carrot: a dark canvas over the whole page (see mrBlackout) */
+.mr-dark {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 200;
+  pointer-events: none;
+}
+/* its traces into the pad, and the current running up them into the rabbit */
+.mr-power {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 560px;
+  height: 560px;
+  overflow: visible;
+  transform: translateZ(0.25px);
+  pointer-events: none;
+}
+.mr-power .fx-tr {
+  stroke: rgba(150, 136, 255, 0.45);
+  transition:
+    stroke 0.6s,
+    filter 0.6s;
+}
+.mr-power.live .fx-tr {
+  stroke: rgba(127, 243, 255, 0.7);
+  filter: drop-shadow(0 0 2px rgba(127, 243, 255, 0.8));
+}
+.mr-zap {
+  fill: none;
+  stroke: #eafdff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 0 1000;
+  filter: drop-shadow(0 0 2.5px #7ff3ff);
+}
+/* MODEL and PRINT: big mushroom buttons in a chrome collar */
+.mr-collar {
+  --cs0: #555b86;
+  --cs1: #9aa1c8;
+  --cs2: #e0e3f5;
+  --ct: #b8bee0;
+}
+.mr-collar .cyl-top {
+  box-shadow: inset 0 0 0 2px #6a7099;
+}
+.mk-btn {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.mk-btn .cyl-body {
+  transition:
+    height 0.09s ease-out,
+    top 0.09s ease-out;
+}
+.mk-btn .cyl-top {
+  background: radial-gradient(circle at 38% 32%, #fff 0 6%, var(--ct) 34%, var(--cs1) 100%);
+  box-shadow: inset 0 0 0 0.8px rgba(255, 255, 255, 0.55);
+}
+.mk-btn.next {
+  --cs0: #7a4a10;
+  --cs1: #c98a2a;
+  --cs2: #ffd08a;
+  --ct: #ffb547;
+}
+.mk-btn.go {
+  --cs0: #7a1f5f;
+  --cs1: #c94aa5;
+  --cs2: #ffa3e8;
+  --ct: #ff6fd8;
+}
+/* they glow softly until the first press, to invite one */
+.mk-btn.hint .cyl-top {
+  animation: mkBtnHint 2.2s ease-in-out infinite;
+}
+@keyframes mkBtnHint {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0.8px rgba(255, 255, 255, 0.55);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 0.8px #fff,
+      0 0 8px 2px var(--ct);
+  }
+}
+/* PRINT flashes red when the printer refuses a job */
+.mk-btn.err .cyl-top {
+  animation: mkBtnErr 0.5s steps(2) 2;
+}
+@keyframes mkBtnErr {
+  50% {
+    background: #ff3b5c;
+    box-shadow: 0 0 9px 3px #ff3b5c;
+  }
+}
+/* round things drawn on cards that face the camera (see mrCard): the nixie tubes, the generator's coil */
+.mr-card {
+  position: absolute;
+  --bb: atan2(
+    calc(-1 * (var(--vx) * cos(var(--R)) + var(--vy) * sin(var(--R)))),
+    calc(var(--vy) * cos(var(--R)) - var(--vx) * sin(var(--R)))
+  );
+  --el: atan2(var(--vz), sqrt(calc(var(--vx) * var(--vx) + var(--vy) * var(--vy))));
+  backface-visibility: visible;
+  pointer-events: none;
+}
+.mr-card > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+/* the nixie tubes (in the tower's sockets): glass like the tower's, the mesh anode, the dark digits, the letter */
+.mr-nx .mesh {
+  position: absolute;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(60deg, rgba(150, 95, 60, 0.55) 0 0.6px, transparent 0.6px 2.4px),
+    repeating-linear-gradient(-60deg, rgba(150, 95, 60, 0.55) 0 0.6px, transparent 0.6px 2.4px);
+  opacity: 0.45;
+}
+.mr-nx span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font:
+    400 17px/17px "Chakra Petch",
+    system-ui,
+    sans-serif;
+}
+.mr-nx .off {
+  color: rgba(170, 140, 120, 0.22);
+  -webkit-text-stroke: 0.4px rgba(200, 170, 150, 0.3);
+}
+.mr-nx .lit {
+  opacity: 0;
+  color: #ffd9a8;
+  text-shadow:
+    0 0 1px #fff4e0,
+    0 0 3px #ffb45c,
+    0 0 7px #ff8a1e,
+    0 0 14px #ff6a00;
+  transition: opacity 0.4s;
+}
+.mr-nx .glow,
+.mr-nx .bloom {
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.mr-nx.on .lit {
+  opacity: 1;
+  animation: hum 3.2s ease-in-out infinite;
+}
+.mr-nx.on .glow {
+  opacity: 0.9;
+}
+.mr-nx.on .bloom {
+  opacity: 1;
+}
+.mr-nx.on.flick .lit,
+.mr-nx.on.flick .glow,
+.mr-nx.on.flick .bloom {
+  animation: flick 0.7s steps(1, end);
+}
+.mr-nx-halo {
+  position: absolute;
+  left: 0;
+  top: -4px;
+  width: 100%;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 120, 30, 0.38), rgba(255, 90, 20, 0.08) 60%, transparent);
+  opacity: 0;
+  transition: opacity 1s;
+  pointer-events: none;
+}
+.mr-nx-halo.on {
+  opacity: 1;
+}
+/* the rabbit's controls: an arcade joystick on its plate, a space bar (the mobile face's console key) */
+.mr-desk .rb-cap.sp > .bx-top {
+  font-size: 5px;
+  letter-spacing: 0.22em;
+}
+.mr-desk .rb-cap.down {
+  transform: translateZ(calc(var(--z) - 2px));
+}
+.mr-joy,
+.mr-hit {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none; /* a finger on the joystick drives the rabbit, it doesn't scroll the page */
+}
+.mr-hit {
+  position: absolute;
+}
+.mr-hit + .mr-hit,
+.mr-desk .rb-cap {
+  cursor: pointer;
+  touch-action: none;
+}
+.mr-joy-plate {
+  --t: #0e1036;
+  --sd: #07082a;
+  --sl: #1d2058;
+}
+.mr-joy-plate > .bx-top {
+  box-shadow: inset 0 0 0 0.8px #3c41a0;
+}
+.mr-joy-boot {
+  --cs0: #050616;
+  --cs1: #0d0e28;
+  --cs2: #1a1c44;
+  --ct: #0a0b22;
+}
+.mr-joy-shaft {
+  --cs0: #555b86;
+  --cs1: #9aa1c8;
+  --cs2: #e0e3f5;
+  --ct: #9aa1c8;
+}
+/* the knob: a ball, so a camera-facing disc (see .led-cap) */
+.mr-ball {
+  position: absolute;
+  border-radius: 50%;
+  backface-visibility: visible;
+  --bb: atan2(
+    calc(-1 * (var(--vx) * cos(var(--R)) + var(--vy) * sin(var(--R)))),
+    calc(var(--vy) * cos(var(--R)) - var(--vx) * sin(var(--R)))
+  );
+  --el: atan2(var(--vz), sqrt(calc(var(--vx) * var(--vx) + var(--vy) * var(--vy))));
+  transform: translateZ(13px) rotateZ(var(--bb)) rotateX(calc(var(--el) - 90deg));
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.8) 0 7%, rgba(255, 255, 255, 0.2) 18%, transparent 32%),
+    radial-gradient(circle at 50% 60%, #ff7ad6 0%, #e0409f 55%, #8a1d63 100%);
+  box-shadow: inset 0 0 0 0.6px #ffa3e8;
+}
+/* fences along the printer's belt: down in their slots, up while the carrot rides */
+.mr-fences {
+  transform: translateZ(-30px);
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1.25);
+}
+.mr-fences.up {
+  transform: none;
+}
+.mr-post {
+  --t: #ffb547;
+  --sd: #b37420;
+  --sl: #ffd08a;
+}
+.mr-rail {
+  --t: #ffb547;
+  --sd: #b37420;
+  --sl: #ffd08a;
+}
+.mr-rail > .bx-top,
+.mr-rail > .bx-s {
+  background: repeating-linear-gradient(45deg, #ffb547 0 3px, #1b1f5a 3px 6px);
+}
+.mr-slot {
+  position: absolute;
+  transform: translateZ(0.3px);
+  border-radius: 1px;
+  background: #05061e;
+  box-shadow: inset 0 0 0 0.6px #ffb54755;
+  pointer-events: none;
+}
+/* where the crane will set a block down (red: it can't), and the layer that catches the click */
+.mr-ghost {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  border: 1.2px dashed #7ff3ff;
+  background: rgba(127, 243, 255, 0.14);
+  box-shadow: 0 0 10px rgba(127, 243, 255, 0.45);
+  pointer-events: none;
+}
+.mr-ghost.bad {
+  border-color: #ff6f91;
+  background: rgba(255, 111, 145, 0.16);
+  box-shadow: 0 0 10px rgba(255, 111, 145, 0.5);
+}
+.mr-catch {
+  position: absolute;
+  left: 56px;
+  top: 56px;
+  width: 448px;
+  height: 448px;
+  transform: translateZ(0.25px);
+  pointer-events: none;
+}
+.mr-catch.on {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+/* a block set down on the board: click it and the crane comes for it */
+.mr-blk.grab {
+  pointer-events: auto;
+  cursor: grab;
+}
+.mk-stage.placing .mr-blk.grab {
+  pointer-events: none;
+}
+/* printed layers: fine horizontal lines on every side */
+.mk-print > .bx-front,
+.mk-print > .bx-back {
+  background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.13) 0 0.6px, transparent 0.6px 2px);
+}
+.mk-print > .bx-left,
+.mk-print > .bx-right {
+  background-image: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.13) 0 0.6px, transparent 0.6px 2px);
+}
+/* the rabbit: printed shell (.mk-hull, .mk-trim), a white tail, LEDs that light up once its boards are in */
+.mr-tail {
+  --t: #f4f5ff;
+  --sd: #b8bce8;
+  --sl: #ffffff;
+}
+.mr-led {
+  --t: #2a1640;
+  --sd: #1d0f30;
+  --sl: #3a2050;
+}
+.mr-led.on {
+  --t: #ff8fd9;
+  --sd: #ff6fd8;
+  --sl: #ffd6f4;
+}
+.mr-led.on > .bx-top {
+  box-shadow: 0 0 4px 1px #ff6fd8;
+  animation: blink 1s steps(1) infinite;
+}
+.mr-eye.on {
+  --t: #6fd8ff;
+  --sd: #3a9ccf;
+  --sl: #a8ecff;
+}
+.mr-eye.on > .bx-top {
+  box-shadow: none;
+  animation: none;
+}
+/* awake: the eyes shine, the LEDs stop blinking */
+.mr-rabbit.live .mr-eye {
+  --t: #e6fdff;
+  --sd: #7ff3ff;
+  --sl: #ffffff;
+}
+.mr-rabbit.live .mr-eye > .bx-top,
+.mr-rabbit.live .mr-eye > .bx-s {
+  box-shadow: 0 0 5px 1px #7ff3ff;
+}
+.mr-rabbit.live .mr-led > .bx-top {
+  animation: none;
+}
+.mr-shadow {
+  position: absolute;
+  left: -12px;
+  top: -10px;
+  width: 24px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(3, 4, 24, 0.55), rgba(3, 4, 24, 0));
+  pointer-events: none;
+}
+/* the carrot: a root that tapers to its tip, on a little stand, leaves on top */
+.mr-stand {
+  --cs0: #141640;
+  --cs1: #262a66;
+  --cs2: #3a3f8a;
+  --ct: #2b2f78;
+}
+.mr-root {
+  --cs0: #9a3d0a;
+  --cs1: #ff8a2a;
+  --cs2: #ffc27a;
+  --ct: #ff9a3c;
+}
+.mr-root > .cyl-body {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    97% 18%,
+    89% 42%,
+    76% 68%,
+    60% 92%,
+    52% 100%,
+    48% 100%,
+    40% 92%,
+    24% 68%,
+    11% 42%,
+    3% 18%
+  );
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(120, 40, 0, 0.35) 3px 3.6px),
+    linear-gradient(90deg, var(--cs0) 0%, var(--cs1) 45%, var(--cs2) 78%, var(--cs1) 100%);
+}
+.mr-root > .cyl-top {
+  box-shadow: inset 0 0 0 0.8px #c4621a;
+}
+.mr-leaf {
+  --t: #63e66f;
+  --sd: #2e8f3a;
+  --sl: #9ff5a8;
+}
+/* the crane's magnet lets go of it */
+.mr-carrot .wob {
+  animation: mrWob 0.5s ease-in-out;
+}
+@keyframes mrWob {
+  0%,
+  100% {
+    transform: translateZ(0.6px);
+  }
+  30% {
+    transform: translateZ(0.6px) rotateX(7deg);
+  }
+  65% {
+    transform: translateZ(0.6px) rotateX(-5deg);
+  }
+}

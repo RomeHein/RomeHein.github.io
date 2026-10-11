@@ -335,10 +335,17 @@ function showSeg(text) {
 /* idle message scrolling in, one digit at a time */
 const MARQUEE = "CLICK ON BUTTONS TO INTERACT";
 let mqPos = 0,
-  mqHold = false;
+  mqHold = false,
+  mqText = MARQUEE;
 function marqueeTick() {
   if (!mqHold && !ROLL.active) {
-    const tape = " ".repeat(NDIG) + MARQUEE + "   ";
+    // on the maker face, its game's next step instead
+    const msg = mrHintText() || MARQUEE;
+    if (msg !== mqText) {
+      mqText = msg;
+      mqPos = 0;
+    }
+    const tape = " ".repeat(NDIG) + mqText + "   ";
     const w = (tape + tape).slice(mqPos, mqPos + NDIG);
     showRaw(w);
     mqPos = (mqPos + 1) % tape.length;

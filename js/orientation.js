@@ -72,7 +72,10 @@ function billboards() {
     { els: pick("#board .cyl, #board .lc-body, #board .led-cap"), map: c => [c[0], c[2], -c[1]] },
     { els: pick("#aiGroup .cyl"), map: c => [c[0], c[1], c[2]] },
     { els: pick("#mobGroup .cyl"), map: c => [c[2], c[1], -c[0]] },
-    { els: pick("#makGroup .cyl, #makGroup .mk-items, #makGroup .mk-rocket"), map: c => [-c[0], c[1], -c[2]] },
+    {
+      els: pick("#makGroup .cyl, #makGroup .lc-body, #makGroup .mr-card, #makGroup .mk-items, #makGroup .mk-rocket"),
+      map: c => [-c[0], c[1], -c[2]],
+    },
     { els: pick("#swGroup .cyl"), map: c => [-c[2], c[1], c[0]] },
   ];
 }
