@@ -1245,6 +1245,7 @@ function mrWin(c) {
   R.jb = 0.15; // a happy jump
   MR.winT = performance.now();
   MR.solved = true;
+  secretFound("maker"); // one more on the board's screen
   mrSay("THE RABBIT GOT ITS CARROT", "teal", 8);
   mrBlackout(); // then the power fails: the tubes have the last word
 }

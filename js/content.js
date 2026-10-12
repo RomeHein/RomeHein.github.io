@@ -176,13 +176,10 @@ const TOPICS = [
     ],
   },
 ];
-const IDLE_SCREEN = [
-  "boot .......... [ok]",
-  "modules ......... 4",
-  "leds .......... [ok]",
-  "",
-  "> follow the white rabbit",
-];
+/* the board's screen at rest; it then works as a terminal (see board.js): the prompt waits on the last line, and
+   the secrets line counts the hidden games solved, one on each topic's face */
+const SCREEN_HINT = "> follow the white rabbit";
+const IDLE_SCREEN = ["boot .......... [ok]", "modules ....... [ok]", "secrets ........ 0/4", "", SCREEN_HINT, "$ "];
 
 /* AI projects (at Callbell), shown on the AI panel; `tag` is the module that lights up around the hologram.
    Each project also needs an icon in AI_ICON (panel.js). */

@@ -470,6 +470,7 @@ function rbWin() {
   RB.state = "win";
   RB.winT = 0;
   RB.solved = true;
+  secretFound("mobile"); // one more on the board's screen
   setTimeout(() => {
     if (RB.solved) rbCells(RB_WORD);
   }, 500);

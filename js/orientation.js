@@ -13,6 +13,7 @@ const FACE_UP = {
   right: qAxis(0, 0, 1, -90),
   front: qAxis(1, 0, 0, 90),
   back: qAxis(1, 0, 0, -90),
+  bottom: qAxis(1, 0, 0, 180), // turned right over (past the front face)
 };
 const FACE_N = {
   top: [0, -1, 0],

@@ -417,3 +417,91 @@ async function typeScreen(title, code, lines) {
   dispLines.lastElementChild && dispLines.lastElementChild.appendChild(cur);
   setLed("blue", false);
 }
+
+/* ---------------- the screen as a terminal ---------------- */
+/* Once booted, the screen takes what the visitor types on the prompt line (letters and the like: the keys the
+   topics and the games use are left to them). Enter runs it; one word, "HAL", turns the cube over to its last
+   face, underneath, even without Enter. The secrets line counts the hidden games solved. */
+const SECRETS = { mobile: false, maker: false, web: false, ai: false }, // a hidden game on each topic's face
+  TERM = { on: false, buf: "", say: 0, auto: 0 },
+  TERM_COLS = 26; // what fits after the prompt
+const dotted = (label, value) => `${label} ${".".repeat(Math.max(1, 18 - label.length - value.length))} ${value}`,
+  termRow = start => [...dispLines.children].find(r => r.textContent.startsWith(start));
+function termCursor() {
+  let c = dispLines.querySelector(".cursor");
+  if (!c) {
+    c = document.createElement("span");
+    c.className = "cursor";
+  }
+  return c;
+}
+/* the prompt line, the cursor after what has been typed (its end, if it is long) */
+function termPrompt() {
+  const row = dispLines.lastElementChild;
+  row.textContent = "$ " + TERM.buf.slice(-TERM_COLS);
+  row.appendChild(termCursor());
+}
+/* the screen answers on the hint's line, typed out, then the hint comes back */
+async function termSay(text, ms) {
+  const my = ++TERM.say,
+    row = termRow(">"),
+    wait = t => new Promise(r => setTimeout(r, reduce ? 0 : t));
+  const type = async line => {
+    for (let c = 0; c <= line.length; c++) {
+      if (my !== TERM.say) return false;
+      row.textContent = line.slice(0, c);
+      setLed("blue", c % 3 !== 0);
+      await wait(18);
+    }
+    setLed("blue", false);
+    return true;
+  };
+  if (!row || !(await type(text))) return;
+  await new Promise(r => setTimeout(r, ms));
+  if (my === TERM.say) type(SCREEN_HINT);
+}
+function termRun() {
+  const cmd = TERM.buf.trim().toUpperCase();
+  clearTimeout(TERM.auto);
+  TERM.buf = "";
+  termPrompt();
+  if (cmd === "HAL") {
+    termSay("> opening the pod bay doors", 5000);
+    select(HAL);
+  } else termSay("> access denied", 2200);
+}
+/* a hidden game is solved: one more secret on the screen */
+function secretFound(id) {
+  if (!(id in SECRETS) || SECRETS[id]) return;
+  SECRETS[id] = true;
+  const n = Object.values(SECRETS).filter(Boolean).length,
+    row = termRow("secrets");
+  if (!row) return;
+  row.textContent = dotted("secrets", `${n}/${Object.keys(SECRETS).length}`);
+  row.classList.remove("hot");
+  void row.offsetWidth;
+  row.classList.add("hot");
+}
+addEventListener("keydown", e => {
+  if (!TERM.on || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+  const el = e.target,
+    at = sel => !!(el && el.closest && el.closest(sel));
+  if (at("input, textarea, select, [contenteditable]")) return;
+  const k = e.key,
+    pressing = at("button, a"); // Space and Enter press what has the focus
+  if (k === "Backspace") {
+    if (!TERM.buf) return;
+    TERM.buf = TERM.buf.slice(0, -1);
+  } else if (k === "Enter") {
+    if (!TERM.buf || pressing) return;
+    e.preventDefault();
+    return termRun();
+  } else if (k.length === 1 && !/[1-4]/.test(k)) {
+    if (k === " " && (!TERM.buf || pressing)) return; // and a space alone may scroll the page
+    TERM.buf = (TERM.buf + k).slice(-60);
+  } else return; // 1–4, the arrows, Escape: the topics'
+  e.preventDefault();
+  termPrompt();
+  clearTimeout(TERM.auto);
+  if (TERM.buf.trim().toUpperCase() === "HAL") TERM.auto = setTimeout(termRun, reduce ? 0 : 700);
+});

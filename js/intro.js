@@ -23,7 +23,7 @@ function powerUp() {
   INTRO.dark = false;
   setTimeout(bgPulse, reduce ? 0 : 600);
   $("#world").classList.remove("off");
-  typeScreen("ROMAIN CAYZAC", "RC-BOARD", IDLE_SCREEN);
+  typeScreen("ROMAIN CAYZAC", "RC-BOARD", IDLE_SCREEN).then(() => (TERM.on = true)); // then it takes the keyboard
   nixieWarmUp();
   setTimeout(marqueeTick, reduce ? 0 : 700);
   document.body.classList.remove("intro");

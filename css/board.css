@@ -193,6 +193,20 @@
   white-space: pre;
   overflow: hidden;
 }
+/* the blank line between the status and the message: half a line */
+.disp-lines div:empty {
+  height: 0.5em;
+}
+/* a secret found: its line flashes */
+.disp-lines .hot {
+  animation: termHot 0.5s steps(1) 4;
+}
+@keyframes termHot {
+  50% {
+    color: #fff;
+    text-shadow: 0 0 6px currentColor;
+  }
+}
 .cursor {
   display: inline-block;
   width: 5px;
